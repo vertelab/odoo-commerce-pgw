@@ -72,7 +72,7 @@ class AcquirerPayerSE(models.Model):
         etree.SubElement(buyer_details, "first_name").text = partner_values['first_name']
         etree.SubElement(buyer_details, "last_name").text = partner_values['last_name']
         etree.SubElement(buyer_details, "adress_line_1").text = partner_values['address']
-        etree.SubElement(buyer_details, "adress_line_2")    #Necessary?
+        #etree.SubElement(buyer_details, "adress_line_2")    #Necessary?
         etree.SubElement(buyer_details, "postal_code").text = partner_values['zip']
         etree.SubElement(buyer_details, "city").text = partner_values['city']
         etree.SubElement(buyer_details, "country_code").text = partner_values['country'].code
@@ -93,11 +93,11 @@ class AcquirerPayerSE(models.Model):
         i = 1
         for line in order.order_line:
             freeform_purchase = etree.SubElement(purchase_list, "freeform_purchase")
-            etree.SubElement(freeform_purchase, "line_number").text = str(i)
+            etree.SubElement(freeform_purchase, "line_number").text = unicode(i)
             etree.SubElement(freeform_purchase, "description").text = line.name
-            etree.SubElement(freeform_purchase, "price_including_vat").text = str(100)
-            etree.SubElement(freeform_purchase, "vat_percentage").text = str(25)
-            etree.SubElement(freeform_purchase, "line_number").text = str(line.product_uom_qty)
+            etree.SubElement(freeform_purchase, "price_including_vat").text = unicode(100)
+            etree.SubElement(freeform_purchase, "vat_percentage").text = unicode(25)
+            etree.SubElement(freeform_purchase, "quantity").text = unicode(3) #line.product_uom_qty)
             i += 1
         
         #Generate callback data
@@ -106,7 +106,7 @@ class AcquirerPayerSE(models.Model):
         etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, PayerSEController._success_url)
         etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, PayerSEController._auth_url)
         etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, PayerSEController._settle_url)
-        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = tx_values.get('tx_url', '')
+        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, tx_values.get('return_url', ''))
         
         #Generate other data
         
@@ -127,10 +127,12 @@ class AcquirerPayerSE(models.Model):
             etree.SubElement(database_overrides, "test_mode").text = "false"
         
         #TODO: how and when to use debug mode?
-        etree.SubElement(database_overrides, "debug_mode").text = "brief"
+        etree.SubElement(database_overrides, "debug_mode").text = "verbose"
         
         #TODO: Add support for other languages
         etree.SubElement(database_overrides, "language").text = "sv"
+        
+        _logger.info(etree.tostring(root, pretty_print=True))
         
         return base64.b64encode(etree.tostring(root, pretty_print=False))
     
