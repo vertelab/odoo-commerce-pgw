@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="acquirer_form_payerse" model="ir.ui.view">
+            <field name="name">acquirer.form.payerse</field>
+            <field name="model">payment.acquirer</field>
+            <field name="inherit_id" ref="payment.acquirer_form"/>
+            <field name="arch" type="xml">
+                <xpath expr='//group[@name="acquirer_display"]' position='after'>
+                    <group attrs="{'invisible': [('provider', '!=', 'payerse')]}">
+                        <group>
+                            <group>
+                                <field name="payerse_agent_id"/>
+                                <field name="payerse_key_1"/>
+                                <field name="payerse_key_2"/>
+                                <field name="payerse_payment_method_card"/>
+                                <field name="payerse_payment_method_bank"/>
+                                <field name="payerse_payment_method_invoice"/>
+                                <field name="payerse_payment_method_phone"/>
+                            </group>
+                        </group>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="transaction_form_payerse" model="ir.ui.view">
+            <field name="name">acquirer.transaction.form.payerse</field>
+            <field name="model">payment.transaction</field>
+            <field name="inherit_id" ref="payment.transaction_form"/>
+            <field name="arch" type="xml">
+                <xpath expr='//notebook' position='inside'>
+                    <page string="Payer.se TX Details">
+                        <group>
+                            
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</openerp>
