@@ -28,55 +28,71 @@ import openerp.tools
 import string
 import werkzeug
 import logging
+import pprint
+import urllib2
 _logger = logging.getLogger(__name__)
 
 class PayerSEController(http.Controller):
-    _success_url = "/payment/payerse/success"
-    _auth_url = "/payment/payerse/authorize"
-    _settle_url = "/payment/payerse/settle"
-    _shop_url = "/payment/payerse/return"
+    #_success_url = "/payment/payerse/success"
+    _verify_url = "/payment/payerse/verify"
+    #~ _settle_url = "/payment/payerse/settle"
     
-    _ip_whitelist = ["79.136.103.5", "94.140.57.180", "94.140.57.181", "94.140.57.184"]
     
-    def validate_ip(ip):
-        if ip in self._ip_whitelist:
-            return True
-        _logger.warning('Payer.se: callback from unauthorized ip: %s' % ip)
-        return False
         
-    def validate_checksum(self, url, checksum, tx):
-        if checksum:
-            data = url[0:url.rfind('&')]
-            expected = tx.acquirer_id._payerse_generate_checksum(data)
-            if checksum == expected:
-                return True
-            _logger.warning('Payer.se: callback checksum (%s) did not match expected checksum (%s).' % (checksum, expected))
-        else:
-            _logger.warning('Payer.se: callback did not contain a checksum.')
-        return False
+    #~ def validate_checksum(self, url, checksum, tx):
+        #~ if checksum:
+            #~ data = url[0:url.rfind('&')]
+            #~ expected = tx.acquirer_id._payerse_generate_checksum(data)
+            #~ if checksum == expected:
+                #~ return True
+            #~ _logger.warning('Payer.se: callback checksum (%s) did not match expected checksum (%s).' % (checksum, expected))
+        #~ else:
+            #~ _logger.warning('Payer.se: callback did not contain a checksum.')
+        #~ return False
     
-    @http.route('/payment/payerse/settle', type='http', auth='none', method='GET')
-    def settle_payment(self, **post):
-        if self.validate_ip(request.httprequest.remote_addr):
-            reference = post.get('order_id', False)
-            if reference:
-                order = request.env['sale.order'].search([('name', '=', reference)])
-                if len(order) != 1:
-                    _logger.warning('Payer.se callback referenced non-existing sales order: %s' % reference)
-                    return ''
-                tx = request.env['payment.acquirer'].search([('sale_order_id', '=', order[0].id)])
-                if len(order) != 1:
-                    _logger.warning('Payer.se callback referenced a sales order with no transaction: %s' % reference)
-                    return ''
-                if self.validate_checksum(request.httprequest.url, post.get('md5sum', False), tx[0]):
-                    #Everything checked out. Do stuff
-                    return ''
-            else:
-                _logger.warning('Payer.se callback did not contain an order reference.')
-        return ''
+    #~ @http.route('/payment/payerse/settle', type='http', auth='none', method='GET')
+    #~ def settle_payment(self, **post):
+        #~ _logger.info('Beginning Payer.se settle callback with post data %s' % pprint.pformat(post))  # debug
+        #~ data = [post, request.httprequest.url, request.httprequest.remote_addr]
+        #~ res = request.env['payment.transaction'].sudo().form_feedback(data, 'payerse')
+        #~ if res:
+            #~ return 'TRUE'
+        #~ return 'FALSE' # Will this cancel payment? Yes!
+    
+    @http.route('/payment/payerse/verify', type='http', auth='none', method='GET')
+    def auth_payment(self, **post):
+        _logger.info('Processing Payer.se callback with post data:\n%s' % pprint.pformat(post))  # debug
+        data = [post, request.httprequest.url, request.httprequest.remote_addr]
+        res = request.env['payment.transaction'].sudo().form_feedback(data, 'payerse')
+        _logger.info('value of res: %s' % res)
+        if res:
+            return 'TRUE'
+        else:
+            return 'FALSE' # Will this cancel payment? Yes!
+        
+        
+        #~ if self.validate_ip(request.httprequest.remote_addr):
+            #~ reference = post.get('order_id', False)
+            #~ if reference:
+                #~ order = request.env['sale.order'].search([('name', '=', reference)])
+                #~ if len(order) != 1:
+                    #~ _logger.warning('Payer.se callback referenced non-existing sales order: %s' % reference)
+                    #~ return ''
+                #~ tx = request.env['payment.acquirer'].search([('sale_order_id', '=', order[0].id)])
+                #~ if len(order) != 1:
+                    #~ _logger.warning('Payer.se callback referenced a sales order with no transaction: %s' % reference)
+                    #~ return ''
+                #~ if self.validate_checksum(request.httprequest.url, post.get('md5sum', False), tx[0]):
+                    #~ #Everything checked out. Do stuff.
+                    #~ return 'TRUE'
+            #~ else:
+                #~ _logger.warning('Payer.se callback did not contain an order reference.')
+        #~ return ''
+    
     
     @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
     def test(self, **post):
-        foo = post.get('foo', False)
-        return 'url: %s<br/>url_root: %s' % (request.httprequest.url, request.httprequest.url_root)
+        url = request.httprequest.url
+        url=urllib2.unquote(url).decode('utf8') 
+        return '\nUTF-8: %s' % url
 

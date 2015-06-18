@@ -12,7 +12,7 @@
                 <!-- submit -->
                 <button type="submit" width="100px"
                     t-att-class="submit_class">
-                    <t t-if="tx_values['payer_testmode'] == 'test'" t-esc="TEST "/>
+                    <t t-if="tx_values['payer_testmode'] == 'test'">TEST </t>
                     <img t-if="not submit_txt" src="/payment_paypal/static/src/img/paypal_icon.png"/>
                     <span t-if="submit_txt"><t t-esc="submit_txt"/> <span class="fa fa-long-arrow-right"/></span>
                 </button>

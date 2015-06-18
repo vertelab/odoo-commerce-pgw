@@ -18,6 +18,8 @@
                                 <field name="payerse_payment_method_bank"/>
                                 <field name="payerse_payment_method_invoice"/>
                                 <field name="payerse_payment_method_phone"/>
+                                <field name="payerse_return_address"/>
+                                <field name="payerse_cancel_address"/>
                             </group>
                         </group>
                     </group>
@@ -33,7 +35,10 @@
                 <xpath expr='//notebook' position='inside'>
                     <page string="Payer.se TX Details">
                         <group>
-                            
+                            <field name="payerse_payment_type"/>
+                            <field name="payerse_testmode"/>
+                            <field name="payerse_added_fee"/>
+                            <field name="payerse_paymentid"/>
                         </group>
                     </page>
                 </xpath>
