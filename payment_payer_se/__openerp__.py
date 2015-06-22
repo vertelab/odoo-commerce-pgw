@@ -29,6 +29,7 @@
 'depends': ['payment'],
 'data': ['views/payerse.xml',
         'views/payment_acquirer.xml',
+        'data/payerse.xml',
 ],
 'installable': True,
 }

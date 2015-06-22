@@ -115,10 +115,10 @@ class AcquirerPayerSE(models.Model):
         #Generate callback data
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         processing_control = etree.SubElement(root, "processing_control")
-        etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, tx_values.get('return_url', ''))
+        etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url) #tx_values.get('return_url', '')
         etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url)
         etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url)
-        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, tx_values.get('cancel_url', ''))
+        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url) #tx_values.get('cancel_url', ''))
         
         #Generate other data
         
@@ -258,8 +258,8 @@ class TxPayerSE(models.Model):
             invalid_parameters.append(('md5sum', 'None', 'a value'))
         if checksum and checksum != expected:
             invalid_parameters.append(('md5sum', checksum, expected))   # TODO: Remove logging of expected checksum.
-        if not tx.acquirer_id.validate_ip(ip):
-            invalid_parameters.append(('callback sender ip', ip, 'Not whitelisted'))
+        #~ if not tx.acquirer_id.validate_ip(ip):
+            #~ invalid_parameters.append(('callback sender ip', ip, 'Not whitelisted'))
         if testmode != tx.payerse_testmode:
             invalid_parameters.append(('test_mode', testmode, tx.payerse_testmode))
         return invalid_parameters
@@ -269,7 +269,7 @@ class TxPayerSE(models.Model):
         _logger.info('validate form')
         post = data[0]
         #order_id = post.get('order_id', False)                        #Original parameter added by merchants shop.
-        payer_testmode = post.get('payer_testmode', False)	        #[true|false] – indicates test or live mode    
+        #payer_testmode = post.get('payer_testmode', False)	        #[true|false] – indicates test or live mode    
         payer_callback_type = post.get('payer_callback_type', False)    #[authorize|settle|store] – callback type
         payer_added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
         payer_payment_id = post.get('payer_payment_id', False)	        #[xxx@yyyyy – reference: max 64 characters long] - id
@@ -281,26 +281,22 @@ class TxPayerSE(models.Model):
         
         if payer_payment_id:
             tx_data['acquirer_reference'] = payer_payment_id
-        if payer_testmode and payer_testmode == 'true':
-            tx_data['payerse_testmode'] = True
-        else:
-            tx_data['payerse_testmode'] = False
         if payer_added_fee:
             tx_data['payerse_added_fee'] = payer_added_fee
         
         if not payer_callback_type:
             return False
         elif payer_callback_type == 'settle':
-            _logger.info('Validated Payer.se payment for tx %s: set as done' % (tx.reference))
+            _logger.info('Validated Payer payment for tx %s: set as done' % (tx.reference))
             tx_data.update(state='done', date_validate=fields.Datetime.now())
         elif payer_callback_type == 'auth':
-            _logger.info('Received authorization for Payer.se payment %s: set as pending' % (tx.reference))
-            tx_data.update(state='pending', state_message='Payment authorized by Payer.se')
+            _logger.info('Received authorization for Payer payment %s: set as pending' % (tx.reference))
+            tx_data.update(state='pending', state_message='Payment authorized by Payer')
         elif payer_callback_type == 'store':
-            _logger.info('Received back to store callback from Payer.se payment %s' % (tx.reference))
+            _logger.info('Received back to store callback from Payer payment %s' % (tx.reference))
             return True
         else:
-            error = 'Received unrecognized status for Payper.se payment %s: %s, set as error' % (tx.reference, payer_callback_type)
+            error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
             _logger.info(error)
             tx_data.update(state='error', state_message=error)
         return tx.write(tx_data)
