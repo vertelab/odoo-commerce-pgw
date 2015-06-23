@@ -62,6 +62,7 @@ class AcquirerPayerSE(models.Model):
     
     @api.v8
     def _payerse_generate_xml_data(self, partner_values, tx_values, order):
+        """Generates and returns XML-data for Payer"""
         root = etree.Element("payread_post_api_0_2", nsmap={
             "xsi": "http://www.w3.org/2001/XMLSchema-instance",
         }, attrib={
@@ -149,6 +150,7 @@ class AcquirerPayerSE(models.Model):
         return base64.b64encode(etree.tostring(root, pretty_print=False))
     
     def _payerse_generate_checksum(self, data):
+        """Generate and return an md5 cheksum"""
         return hashlib.md5(self.payerse_key_1 + data + self.payerse_key_2).hexdigest()
     
     @api.multi
@@ -258,7 +260,7 @@ class TxPayerSE(models.Model):
             invalid_parameters.append(('md5sum', 'None', 'a value'))
         if checksum and checksum != expected:
             invalid_parameters.append(('md5sum', checksum, expected))   # TODO: Remove logging of expected checksum.
-        #~ if not tx.acquirer_id.validate_ip(ip):
+        #~ if not tx.acquirer_id.validate_ip(ip):                       # TODO: Re-enable whitelisting after testing.
             #~ invalid_parameters.append(('callback sender ip', ip, 'Not whitelisted'))
         if testmode != tx.payerse_testmode:
             invalid_parameters.append(('test_mode', testmode, tx.payerse_testmode))
