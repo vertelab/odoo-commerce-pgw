@@ -2,7 +2,7 @@
 <openerp>
     <data noupdate="0">
         <record id="payment_acquirer_payerse" model="payment.acquirer">
-            <field name="name">Payer.se</field>
+            <field name="name">Payer</field>
             <field name="provider">payerse</field>
             <field name="company_id" ref="base.main_company"/>
             <field name="view_template_id" ref="payerse_acquirer_button"/>
@@ -15,7 +15,11 @@
             <field name="payerse_payment_method_card">True</field>
             <field name="payerse_payment_method_bank">True</field>
             <field name="payerse_payment_method_invoice">True</field>
-            <field name="payerse_payment_method_phone">True</field>
+            <field name="payerse_payment_method_wywallet">True</field>
+            <field name="payerse_payment_method_instalment">True</field>
+<!--
+            <field name="payerse_payment_method_sms">True</field>
+-->
             <field name="payerse_return_adress">/shop/payment/validate</field>
             <field name="payerse_cancel_adress">/shop/payment</field>
         </record>

@@ -16,10 +16,15 @@
                                 <field name="payerse_key_2"/>
                                 <field name="payerse_payment_method_card"/>
                                 <field name="payerse_payment_method_bank"/>
+                                <field name="payerse_payment_method_wywallet"/>
+<!--
+                                <field name="payerse_payment_method_sms"/>
+-->
+                                <field name="payerse_payment_method_instalment"/>
                                 <field name="payerse_payment_method_invoice"/>
-                                <field name="payerse_payment_method_phone"/>
                                 <field name="payerse_return_address"/>
                                 <field name="payerse_cancel_address"/>
+                                <field name="payerse_debug_mode"/>
                             </group>
                         </group>
                     </group>

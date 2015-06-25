@@ -37,32 +37,65 @@ _logger = logging.getLogger(__name__)
 class AcquirerPayerSE(models.Model):
     _inherit = 'payment.acquirer'
     
-    payerse_agent_id          = fields.Char(string='Payer.se Agent ID', required_if_provider='payerse')
-    payerse_key_1              = fields.Char(string='Payer.se Key 1/Key A', help='The first preshared key.', required_if_provider='payerse')
-    payerse_key_2              = fields.Char(string='Payer.se Key 2/Key B', help='The second preshared key.', required_if_provider='payerse')
-    payerse_payment_method_card = fields.Boolean(string='Allow card payments.', help='Allow card payment.')
-    payerse_payment_method_bank = fields.Boolean(string='Allow bank payments.', help='Allow bank payment.')
-    payerse_payment_method_phone = fields.Boolean(string='Allow phone payments.', help='Allow phone payment.')
-    payerse_payment_method_invoice = fields.Boolean(string='Allow invoice payments.', help='Allow card payment.')
-    payerse_return_address      = fields.Char(string='Success return address', help='Default return address when payment is successfull.', default='/shop/payment/validate', required_if_provider='payerse')
-    payerse_cancel_address      = fields.Char(string='Cancellation return address', help='Default return address when payment is cancelled.', default='/shop/payment', required_if_provider='payerse')
+    payerse_agent_id = fields.Char(string='Payer Agent ID',
+        required_if_provider='payerse')
+    payerse_key_1 = fields.Char(string='Payer Key 1',
+        help='The first preshared key.', required_if_provider='payerse')
+    payerse_key_2 = fields.Char(string='Payer Key 2',
+        help='The second preshared key.',
+        required_if_provider='payerse')
+    payerse_payment_method_card = fields.Boolean(
+        string='Allow card payments.')
+    payerse_payment_method_bank = fields.Boolean(
+        string='Allow bank payments.')
+    payerse_payment_method_wywallet = fields.Boolean(
+        string='Allow Wywallet payments.')
+    #~ payerse_payment_method_sms = fields.Boolean(
+        #~ string='Allow SMS payments.')
+    payerse_payment_method_instalment = fields.Boolean(
+        string='Allow instalment plan.')
+    payerse_payment_method_invoice = fields.Boolean(
+        string='Allow invoice payments.')
+    payerse_return_address = fields.Char(
+        string='Success return address',
+        help='Default return address when payment is successfull.',
+        default='/shop/payment/validate',
+        required_if_provider='payerse')
+    payerse_cancel_address = fields.Char(
+        string='Cancellation return address',
+        help='Default return address when payment is cancelled.',
+        default='/shop/payment', required_if_provider='payerse')
+    payerse_debug_mode = fields.Selection(string='Debug mode',
+        selection=[
+            ('silent', 'Silent'),
+            ('brief', 'Brief'),
+            ('verbose', 'Verbose')
+        ],
+        required=True, default='verbose')
     
-    _ip_whitelist = ["79.136.103.5", "94.140.57.180", "94.140.57.181", "94.140.57.184"]
+    _payerse_ip_whitelist = [
+        "79.136.103.5",
+        "94.140.57.180",
+        "94.140.57.181",
+        "94.140.57.184",
+        ]
     
     def validate_ip(self, ip):
-        if ip in self._ip_whitelist:
+        if ip in self._payerse_ip_whitelist:
             return True
-        _logger.warning('Payer.se: callback from unauthorized ip: %s' % ip)
+        _logger.warning(
+            'Payer: callback from unauthorized ip: %s' % ip)
         return False
     
     def _get_providers(self, cr, uid, context=None):
-        providers = super(AcquirerPayerSE, self)._get_providers(cr, uid, context=context)
-        providers.append(['payerse', 'Payer.se'])
+        providers = super(AcquirerPayerSE, self)._get_providers(cr, uid,
+            context=context)
+        providers.append(['payerse', 'Payer'])
         return providers
     
     @api.v8
-    def _payerse_generate_xml_data(self, partner_values, tx_values, order):
-        """Generates and returns XML-data for Payer"""
+    def _payerse_generate_xml_data(self, partner_values, tx_values):
+        """Generates and returns XML-data for Payer."""
         root = etree.Element("payread_post_api_0_2", nsmap={
             "xsi": "http://www.w3.org/2001/XMLSchema-instance",
         }, attrib={
@@ -77,8 +110,8 @@ class AcquirerPayerSE(models.Model):
         buyer_details = etree.SubElement(root, "buyer_details")
         etree.SubElement(buyer_details, "first_name").text = partner_values['first_name']
         etree.SubElement(buyer_details, "last_name").text = partner_values['last_name']
-        etree.SubElement(buyer_details, "adress_line_1").text = partner_values['address']
-        #etree.SubElement(buyer_details, "adress_line_2")    #Necessary?
+        etree.SubElement(buyer_details, "address_line_1").text = partner_values['address']
+        #etree.SubElement(buyer_details, "address_line_2")    #Necessary? Nope.
         etree.SubElement(buyer_details, "postal_code").text = partner_values['zip']
         etree.SubElement(buyer_details, "city").text = partner_values['city']
         etree.SubElement(buyer_details, "country_code").text = partner_values['country'].code
@@ -91,56 +124,54 @@ class AcquirerPayerSE(models.Model):
         
         #Generate purchase data
         purchase = etree.SubElement(root, "purchase")
-        etree.SubElement(purchase, "currency").text = "SEK" #tx_values['currency'].name
+        etree.SubElement(purchase, "currency").text = tx_values['currency'].name
         etree.SubElement(purchase, "description").text = tx_values['reference']
         etree.SubElement(purchase, "reference_id").text = tx_values['reference']
         purchase_list = etree.SubElement(purchase, "purchase_list")
         
         #Generate product lines
-        i = 1
-        for line in order.order_line:
-            tax = order._amount_line_tax(line)
+        for line in tx_values['payer_order_lines']:
             freeform_purchase = etree.SubElement(purchase_list, "freeform_purchase")
-            etree.SubElement(freeform_purchase, "line_number").text = unicode(i)
-            if line.product_uom_qty.is_integer():
-                etree.SubElement(freeform_purchase, "description").text = line.name
-                quantity = line.product_uom_qty
-            else:
-                etree.SubElement(freeform_purchase, "description").text = '%d X %s' % (line.product_uom_qty, line.name)
-                quantity = 1.0
-            etree.SubElement(freeform_purchase, "price_including_vat").text = unicode((line.price_subtotal + tax) / quantity)
-            etree.SubElement(freeform_purchase, "vat_percentage").text = unicode(tax * 100 / line.price_subtotal)
-            etree.SubElement(freeform_purchase, "quantity").text = unicode(int(quantity))
-            i += 1
+            etree.SubElement(freeform_purchase, "line_number").text = unicode(line['line_number'])
+            etree.SubElement(freeform_purchase, "description").text = unicode(line['description'])
+            etree.SubElement(freeform_purchase, "price_including_vat").text = unicode(line['price_including_vat'])
+            etree.SubElement(freeform_purchase, "vat_percentage").text = unicode(line['vat_percentage'])
+            etree.SubElement(freeform_purchase, "quantity").text = unicode(int(line['quantity']))
         
         #Generate callback data
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         processing_control = etree.SubElement(root, "processing_control")
-        etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url) #tx_values.get('return_url', '')
-        etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url)
-        etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url)
-        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, PayerSEController._verify_url) #tx_values.get('cancel_url', ''))
+        etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, tx_values.get('return_url', ''))
+        etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, tx_values.get('callback_url', ''))
+        etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, tx_values.get('callback_url', ''))
+        etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, tx_values.get('cancel_url', ''))
         
         #Generate other data
         
         database_overrides = etree.SubElement(root, "database_overrides")
         payment_methods = etree.SubElement(database_overrides, "accepted_payment_methods")
+        # Can be set to sms, card, bank, phone, invoice & auto (lies!)
+        # Can be bank, card, invoice, wywallet, enter (= instalment plan) (truth)
+        # Quite possibly another method for electronic invoices.
         if self.payerse_payment_method_bank:
             etree.SubElement(payment_methods, "payment_method").text = "bank"
         if self.payerse_payment_method_card:
             etree.SubElement(payment_methods, "payment_method").text = "card"
         if self.payerse_payment_method_invoice:
             etree.SubElement(payment_methods, "payment_method").text = "invoice"
-        if self.payerse_payment_method_phone:
-            etree.SubElement(payment_methods, "payment_method").text = "phone"
+        if self.payerse_payment_method_wywallet:
+            etree.SubElement(payment_methods, "payment_method").text = "wywallet"
+        #~ if self.payerse_payment_method_sms:
+            #~ etree.SubElement(payment_methods, "payment_method").text = "sms"
+        if self.payerse_payment_method_instalment:
+            etree.SubElement(payment_methods, "payment_method").text = "enter"
         
         if self.environment == "test":
             etree.SubElement(database_overrides, "test_mode").text = "true"
         else:
             etree.SubElement(database_overrides, "test_mode").text = "false"
         
-        #TODO: how and when to use debug mode?
-        etree.SubElement(database_overrides, "debug_mode").text = "verbose"
+        etree.SubElement(database_overrides, "debug_mode").text = self.payerse_debug_mode
         
         #TODO: Add support for other languages
         etree.SubElement(database_overrides, "language").text = "sv"
@@ -150,23 +181,61 @@ class AcquirerPayerSE(models.Model):
         return base64.b64encode(etree.tostring(root, pretty_print=False))
     
     def _payerse_generate_checksum(self, data):
-        """Generate and return an md5 cheksum"""
+        """Generate and return an md5 cheksum."""
         return hashlib.md5(self.payerse_key_1 + data + self.payerse_key_2).hexdigest()
     
     @api.multi
     def payerse_form_generate_values(self, partner_values, tx_values):
-        """method that generates the values used to render the form button template."""
+        """Method that generates the values used to render the form button template."""
         self.ensure_one()
+        
         _logger.info(pprint.pformat(partner_values))
         _logger.info(pprint.pformat(tx_values))
         
-        #TODO: Add alternative to using sale order (keys in tx_values?).
-        reference = tx_values['reference']
-        order = self.env['sale.order'].search([['name', '=', reference]])
-        
-        xml_data = self._payerse_generate_xml_data(partner_values, tx_values, order)
-        
         payer_tx_values = dict(tx_values)
+        if not payer_tx_values.get('return_url'):
+            payer_tx_values['return_url'] = self.payerse_return_address
+        if not payer_tx_values.get('cancel_url'):
+            payer_tx_values['cancel_url'] = self.payerse_cancel_address
+        if not payer_tx_values.get('callback_url'):
+            payer_tx_values['callback_url'] = PayerSEController._callback_url
+
+        #Calculate order lines that will be sent to Payer
+        reference = payer_tx_values.get('reference')
+        payer_order_lines = []
+        total = 0
+        if reference:
+            order = self.env['sale.order'].search([['name', '=', reference]])
+            i = 1
+            for line in order.order_line:
+                tax = order._amount_line_tax(line)
+                line_dict = {}
+                line_dict["line_number"] = i
+                if line.product_uom_qty.is_integer():
+                    line_dict["description"] = line.name
+                    line_dict['quantity'] = line.product_uom_qty
+                else:
+                    line_dict["description"] = '%d X %s' % (line.product_uom_qty, line.name)
+                    line_dict['quantity'] = 1.0
+                line_dict['price_including_vat'] = (line.price_subtotal + tax) / line_dict['quantity']
+                line_dict['vat_percentage'] = tax * 100 / line.price_subtotal
+                total += line_dict['quantity'] * line_dict['price_including_vat']
+                payer_order_lines.append(line_dict)
+                i += 1
+            payer_tx_values['payer_order_lines'] = payer_order_lines
+        
+        #Check that order lines add up to the given amount and adjust if necessary
+        diff = tx_values['amount'] - total
+        if abs(diff) > 0.01:
+            payer_tx_values['payer_order_lines'].append({
+                'line_number': i,
+                'description': 'Order total adjustment',
+                'vat_percentage': 0.0,
+                'quantity': 1.0,
+            })
+        
+        xml_data = self._payerse_generate_xml_data(partner_values, payer_tx_values)
+        
         payer_tx_values.update({
             'payer_agentid': self.payerse_agent_id,
             'payer_xml_writer': "payer_php_0_2_v27",
@@ -176,22 +245,17 @@ class AcquirerPayerSE(models.Model):
             'payer_testmode': self.environment,
         })
         
-        if not payer_tx_values['return_url']:
-            payer_tx_values['return_url'] = self.payerse_return_address
-        if not payer_tx_values['return_url']:
-            payer_tx_values['return_url'] = self.payerse_return_address
         return partner_values, payer_tx_values
     
     @api.multi
     def payerse_get_form_action_url(self):
-        """method that returns the url of the button form. It is used for example in
-        ecommerce application, if you want to post some data to the acquirer."""
+        """Returns the url of the button form."""
         return 'https://secure.payer.se/PostAPI_V1/InitPayFlow'
     
     @api.multi
     def payerse_compute_fees(self, amount, currency_id, country_id):
-        """computed the fees of the acquirer, using generic fields
-        defined on the acquirer model (see fields definition)."""
+        """Computes the fee for a transaction.
+        Broken. Fee is paid by customer and returned with callback."""
         self.ensure_one()
         if not self.fees_active:
             return 0.0
@@ -219,18 +283,14 @@ class TxPayerSE(models.Model):
         _logger.info('get txfrom data')
         reference = data[0].get('payer_merchant_reference_id', False)
         if reference:
-            order = self.env['sale.order'].search([('name', '=', reference)])
-            if len(order) != 1:
-                error_msg = 'Payer.se: callback referenced non-existing sale order: %s' % reference
+            tx = self.env['payment.transaction'].search([('reference', '=', reference)])
+            if len(tx) != 1:
+                error_msg = 'Payer: callback referenced non-existing transaction: %s' % reference
                 _logger.warning(error_msg)
                 raise ValidationError(error_msg)
-            if not order[0].payment_tx_id:
-                error_msg = 'Payer.se: callback referenced a sale order with no transaction: %s' % reference
-                _logger.warning(error_msg)
-                raise ValidationError(error_msg)
-            return order[0].payment_tx_id
+            return tx[0]
         else:
-            error_msg = 'Payer.se: callback did not contain a sale order reference.'
+            error_msg = 'Payer: callback did not contain a tx reference.'
             _logger.warning(error_msg)
             raise ValidationError(error_msg)
     
