@@ -47,11 +47,11 @@ class PayerSEController(http.Controller):
             return 'FALSE' # Will this cancel payment? Yes!
     
     # TODO: Delete test function or get rekt.
-    @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
-    def test(self, **post):
-        url = request.httprequest.url
-        url=urllib2.unquote(url).decode('utf8')
-        url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
-        acquirer = request.env['payment.acquirer'].browse(2)
-        return 'md5sum: %s' % acquirer._payerse_generate_checksum(url)
+    #~ @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
+    #~ def test(self, **post):
+        #~ url = request.httprequest.url
+        #~ url=urllib2.unquote(url).decode('utf8')
+        #~ url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
+        #~ acquirer = request.env['payment.acquirer'].browse(2)
+        #~ return 'md5sum: %s' % acquirer._payerse_generate_checksum(url)
 

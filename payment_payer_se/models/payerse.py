@@ -78,7 +78,7 @@ class AcquirerPayerSE(models.Model):
         "94.140.57.180",
         "94.140.57.181",
         "94.140.57.184",
-        ]
+    ]
     
     def validate_ip(self, ip):
         if ip in self._payerse_ip_whitelist:
@@ -225,11 +225,12 @@ class AcquirerPayerSE(models.Model):
             payer_tx_values['payer_order_lines'] = payer_order_lines
         
         #Check that order lines add up to the given amount and adjust if necessary
-        diff = tx_values['amount'] - total
+        diff = payer_tx_values['amount'] - total
         if abs(diff) > 0.01:
             payer_tx_values['payer_order_lines'].append({
                 'line_number': i,
                 'description': 'Order total adjustment',
+                'price_including_vat': diff,
                 'vat_percentage': 0.0,
                 'quantity': 1.0,
             })
@@ -319,9 +320,9 @@ class TxPayerSE(models.Model):
         else:
             invalid_parameters.append(('md5sum', 'None', 'a value'))
         if checksum and checksum != expected:
-            invalid_parameters.append(('md5sum', checksum, expected))   # TODO: Remove logging of expected checksum.
-        #~ if not tx.acquirer_id.validate_ip(ip):                       # TODO: Re-enable whitelisting after testing.
-            #~ invalid_parameters.append(('callback sender ip', ip, 'Not whitelisted'))
+            invalid_parameters.append(('md5sum', checksum, expected))
+        if not tx.acquirer_id.validate_ip(ip):
+            invalid_parameters.append(('callback sender ip', ip, tx.acquirer_id._payerse_ip_whitelist))
         if testmode != tx.payerse_testmode:
             invalid_parameters.append(('test_mode', testmode, tx.payerse_testmode))
         return invalid_parameters
