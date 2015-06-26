@@ -38,7 +38,7 @@ class PayerSEController(http.Controller):
     @http.route('/payment/payerse/verify', type='http', auth='none', method='GET')
     def auth_payment(self, **post):
         _logger.info('Processing Payer.se callback with post data:\n%s' % pprint.pformat(post))  # debug
-        data = [post, request.httprequest.url, request.httprequest.remote_addr]
+        data = [post, request.httprequest.url, request.httprequest]
         res = request.env['payment.transaction'].sudo().form_feedback(data, 'payerse')
         _logger.info('value of res: %s' % res)
         if res:
@@ -47,11 +47,19 @@ class PayerSEController(http.Controller):
             return 'FALSE' # Will this cancel payment? Yes!
     
     # TODO: Delete test function or get rekt.
-    #~ @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
-    #~ def test(self, **post):
+    @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
+    def test(self, **post):
+        res = ""
+        renv = request.httprequest.environ
+        
+        for key in renv:
+            try:
+                res += '%s = %s\n' % (key, renv[key])
+            except:
+                res += '%s\n' % key
         #~ url = request.httprequest.url
         #~ url=urllib2.unquote(url).decode('utf8')
         #~ url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
         #~ acquirer = request.env['payment.acquirer'].browse(2)
-        #~ return 'md5sum: %s' % acquirer._payerse_generate_checksum(url)
+        return res
 

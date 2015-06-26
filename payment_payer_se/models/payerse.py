@@ -40,22 +40,22 @@ class AcquirerPayerSE(models.Model):
     payerse_agent_id = fields.Char(string='Payer Agent ID',
         required_if_provider='payerse')
     payerse_key_1 = fields.Char(string='Payer Key 1',
-        help='The first preshared key.', required_if_provider='payerse')
+        help='The first preshared key. Sometimes called Key A.', required_if_provider='payerse')
     payerse_key_2 = fields.Char(string='Payer Key 2',
-        help='The second preshared key.',
+        help='The second preshared key. Sometimes called Key B.',
         required_if_provider='payerse')
     payerse_payment_method_card = fields.Boolean(
-        string='Allow card payments.')
+        string='Allow card payments')
     payerse_payment_method_bank = fields.Boolean(
-        string='Allow bank payments.')
+        string='Allow bank payments')
     payerse_payment_method_wywallet = fields.Boolean(
-        string='Allow Wywallet payments.')
+        string='Allow Wywallet payments')
     #~ payerse_payment_method_sms = fields.Boolean(
         #~ string='Allow SMS payments.')
     payerse_payment_method_instalment = fields.Boolean(
-        string='Allow instalment plan.')
+        string='Allow instalment plan')
     payerse_payment_method_invoice = fields.Boolean(
-        string='Allow invoice payments.')
+        string='Allow invoice payments')
     payerse_return_address = fields.Char(
         string='Success return address',
         help='Default return address when payment is successfull.',
@@ -72,7 +72,10 @@ class AcquirerPayerSE(models.Model):
             ('verbose', 'Verbose')
         ],
         required=True, default='verbose')
-    
+    payerse_proxy = fields.Boolean(
+        string='Server is behind a proxy',
+        help='The IP whitelisting function requires this option to be checked, if the server is behind a proxy.',
+        required=True, default=False)
     _payerse_ip_whitelist = [
         "79.136.103.5",
         "94.140.57.180",
@@ -80,7 +83,12 @@ class AcquirerPayerSE(models.Model):
         "94.140.57.184",
     ]
     
-    def validate_ip(self, ip):
+    def payerse_get_ip(self, request):
+        if self.payerse_proxy:
+            return request.environ.get('HTTP_X_FORWARDED_FOR', '')
+        return request.remote_addr
+    
+    def payerse_validate_ip(self, ip):
         if ip in self._payerse_ip_whitelist:
             return True
         _logger.warning(
@@ -301,7 +309,7 @@ class TxPayerSE(models.Model):
         invalid_parameters = []
         post = data[0]
         url = data[1]
-        ip = data[2]
+        request = data[2]
         
         checksum = post.get('md5sum', None)
         url = url[0:url.rfind('&')]                 # Remove checksum
@@ -315,13 +323,14 @@ class TxPayerSE(models.Model):
         
         expected = tx.acquirer_id._payerse_generate_checksum(url)
         testmode = post.get('payer_testmode', 'false') == 'true'
+        ip = tx.acquirer_id.payerse_get_ip(request)
         if checksum:
             checksum = checksum.lower()
         else:
             invalid_parameters.append(('md5sum', 'None', 'a value'))
         if checksum and checksum != expected:
             invalid_parameters.append(('md5sum', checksum, expected))
-        if not tx.acquirer_id.validate_ip(ip):
+        if not tx.acquirer_id.payerse_validate_ip(ip):
             invalid_parameters.append(('callback sender ip', ip, tx.acquirer_id._payerse_ip_whitelist))
         if testmode != tx.payerse_testmode:
             invalid_parameters.append(('test_mode', testmode, tx.payerse_testmode))

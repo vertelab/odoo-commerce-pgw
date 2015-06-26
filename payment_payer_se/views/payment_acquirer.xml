@@ -25,6 +25,7 @@
                                 <field name="payerse_return_address"/>
                                 <field name="payerse_cancel_address"/>
                                 <field name="payerse_debug_mode"/>
+                                <field name="payerse_proxy"/>
                             </group>
                         </group>
                     </group>
