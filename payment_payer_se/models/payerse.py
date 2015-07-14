@@ -75,7 +75,7 @@ class AcquirerPayerSE(models.Model):
     payerse_proxy = fields.Boolean(
         string='Server is behind a proxy',
         help='The IP whitelisting function requires this option to be checked, if the server is behind a proxy.',
-        required=True, default=False)
+        default=False)
     _payerse_ip_whitelist = [
         "79.136.103.5",
         "94.140.57.180",
