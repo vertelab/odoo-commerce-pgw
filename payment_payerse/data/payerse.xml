@@ -17,9 +17,6 @@
             <field name="payerse_payment_method_invoice">True</field>
             <field name="payerse_payment_method_wywallet">True</field>
             <field name="payerse_payment_method_instalment">True</field>
-<!--
-            <field name="payerse_payment_method_sms">True</field>
--->
             <field name="payerse_return_adress">/shop/payment/validate</field>
             <field name="payerse_cancel_adress">/shop/payment</field>
         </record>

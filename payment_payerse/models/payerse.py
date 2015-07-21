@@ -29,7 +29,7 @@ import base64
 import hashlib
 import logging
 import pprint
-from openerp.addons.payment_payer_se.controllers.main import PayerSEController
+from openerp.addons.payment_payerse.controllers.main import PayerSEController
 from openerp.addons.payment.models.payment_acquirer import ValidationError
 
 _logger = logging.getLogger(__name__)
