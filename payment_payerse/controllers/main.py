@@ -38,7 +38,7 @@ class PayerSEController(http.Controller):
     @http.route('/payment/payerse/verify', type='http', auth='none', method='GET')
     def auth_payment(self, **post):
         _logger.debug('Processing Payer.se callback with post data:\n%s' % pprint.pformat(post))  # debug
-        data = [post, request.httprequest.url, request.httprequest]
+        data = [post, request.httprequest.url, request.httprequest.remote_addr]
         res = request.env['payment.transaction'].sudo().form_feedback(data, 'payerse')
         _logger.debug('value of res: %s' % res)
         if res:

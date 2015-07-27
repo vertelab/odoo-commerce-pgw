@@ -74,10 +74,6 @@ class AcquirerPayerSE(models.Model):
             ('verbose', 'Verbose')
         ],
         required=True, default='verbose')
-    payerse_proxy = fields.Boolean(
-        string='Server is behind a proxy',
-        help='The IP whitelisting function requires this option to be checked, if the server is behind a proxy.',
-        default=False)
     _payerse_ip_whitelist = [
         "79.136.103.5",
         "94.140.57.180",
@@ -86,11 +82,6 @@ class AcquirerPayerSE(models.Model):
         #REMOVE!
         "127.0.0.1"
     ]
-    
-    def payerse_get_ip(self, request):
-        if self.payerse_proxy:
-            return request.environ.get('HTTP_X_FORWARDED_FOR', '')
-        return request.remote_addr
     
     def payerse_validate_ip(self, ip):
         if ip in self._payerse_ip_whitelist:
@@ -314,14 +305,13 @@ class TxPayerSE(models.Model):
         invalid_parameters = []
         post = data[0]
         url = data[1]
-        request = data[2]
+        ip = data[2]
         
         checksum = post.get('md5sum', None)
         url = url[0:url.rfind('&')]                 # Remove checksum
         url=urllib2.unquote(url).decode('utf8')     # Convert to UTF-8
         expected = tx.acquirer_id._payerse_generate_checksum(url)
         testmode = post.get('payer_testmode', 'false') == 'true'
-        ip = tx.acquirer_id.payerse_get_ip(request)
         if checksum:
             checksum = checksum.lower()
         else:
