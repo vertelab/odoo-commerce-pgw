@@ -44,18 +44,20 @@ class AcquirerPayerSE(models.Model):
     payerse_key_2 = fields.Char(string='Payer Key 2',
         help='The second preshared key. Sometimes called Key B.',
         required_if_provider='payerse')
+    #~ payerse_auth_only = fields.Boolean(
+        #~ string='Authorize only', default=False)
     payerse_payment_method_card = fields.Boolean(
-        string='Allow card payments')
+        string='Activate card payments')
     payerse_payment_method_bank = fields.Boolean(
-        string='Allow bank payments')
+        string='Activate bank payments')
     payerse_payment_method_wywallet = fields.Boolean(
-        string='Allow Wywallet payments')
-    #~ payerse_payment_method_sms = fields.Boolean(
-        #~ string='Allow SMS payments.')
+        string='Activate Wywallet payments')
+    payerse_payment_method_einvoice = fields.Boolean(
+        string='Activate e-invoice payments.')
     payerse_payment_method_instalment = fields.Boolean(
-        string='Allow instalment plan')
+        string='Activate instalment plan')
     payerse_payment_method_invoice = fields.Boolean(
-        string='Allow invoice payments')
+        string='Activate invoice payments')
     payerse_return_address = fields.Char(
         string='Success return address',
         help='Default return address when payment is successfull.',
@@ -81,6 +83,8 @@ class AcquirerPayerSE(models.Model):
         "94.140.57.180",
         "94.140.57.181",
         "94.140.57.184",
+        #REMOVE!
+        "127.0.0.1"
     ]
     
     def payerse_get_ip(self, request):
@@ -129,12 +133,15 @@ class AcquirerPayerSE(models.Model):
         etree.SubElement(buyer_details, "email").text = partner_values['email']
         #etree.SubElement(buyer_details, "organisation").text = partner_values['first_name']
         #etree.SubElement(buyer_details, "orgnr").text = partner_values['first_name']
+        #~ if self.payerse_auth_only:
+            #~ # All options are stored in the same element as comma separated key value pairs
+            #~ etree.SubElement(buyer_details, "options").text = 'auth_only=true'
         
         #Generate purchase data
         purchase = etree.SubElement(root, "purchase")
         etree.SubElement(purchase, "currency").text = tx_values['currency'].name
         etree.SubElement(purchase, "description").text = tx_values['reference']
-        etree.SubElement(purchase, "reference_id").text = tx_values['reference']
+        #etree.SubElement(purchase, "reference_id").text = tx_values['reference']
         purchase_list = etree.SubElement(purchase, "purchase_list")
         
         #Generate product lines
@@ -150,27 +157,26 @@ class AcquirerPayerSE(models.Model):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         processing_control = etree.SubElement(root, "processing_control")
         etree.SubElement(processing_control, "success_redirect_url").text = urlparse.urljoin(base_url, tx_values.get('return_url', ''))
-        etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, tx_values.get('callback_url', ''))
-        etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, tx_values.get('callback_url', ''))
+        etree.SubElement(processing_control, "authorize_notification_url").text = urlparse.urljoin(base_url, '%s?order_id=%s' % (PayerSEController._callback_url, tx_values['reference']))
+        etree.SubElement(processing_control, "settle_notification_url").text = urlparse.urljoin(base_url, '%s?order_id=%s' % (PayerSEController._callback_url, tx_values['reference']))
         etree.SubElement(processing_control, "redirect_back_to_shop_url").text = urlparse.urljoin(base_url, tx_values.get('cancel_url', ''))
         
         #Generate other data
         
         database_overrides = etree.SubElement(root, "database_overrides")
         payment_methods = etree.SubElement(database_overrides, "accepted_payment_methods")
-        # Can be set to sms, card, bank, phone, invoice & auto (lies!)
-        # Can be bank, card, invoice, wywallet, enter (= instalment plan) (truth)
-        # Quite possibly another method for electronic invoices.
+        # Can be bank, card, invoice, einvoice, wywallet, enter (= instalment plan), and auto (= card ???)
         if self.payerse_payment_method_bank:
             etree.SubElement(payment_methods, "payment_method").text = "bank"
         if self.payerse_payment_method_card:
             etree.SubElement(payment_methods, "payment_method").text = "card"
         if self.payerse_payment_method_invoice:
             etree.SubElement(payment_methods, "payment_method").text = "invoice"
+        if self.payerse_payment_method_einvoice:
+            # Untested because it's not supported by the test account
+            etree.SubElement(payment_methods, "payment_method").text = "einvoice"
         if self.payerse_payment_method_wywallet:
             etree.SubElement(payment_methods, "payment_method").text = "wywallet"
-        #~ if self.payerse_payment_method_sms:
-            #~ etree.SubElement(payment_methods, "payment_method").text = "sms"
         if self.payerse_payment_method_instalment:
             etree.SubElement(payment_methods, "payment_method").text = "enter"
         
@@ -180,13 +186,14 @@ class AcquirerPayerSE(models.Model):
             etree.SubElement(database_overrides, "test_mode").text = "false"
         
         etree.SubElement(database_overrides, "debug_mode").text = self.payerse_debug_mode
+        lang = partner_values.get('lang', 'en')[:2]
+        if lang == 'nb':    # Workaround for norwegian translation.
+            lang = 'no'
+        etree.SubElement(database_overrides, "language").text = lang
         
-        #TODO: Add support for other languages
-        etree.SubElement(database_overrides, "language").text = "sv"
-        
-        _logger.info(etree.tostring(root, pretty_print=True))
-        
-        return base64.b64encode(etree.tostring(root, pretty_print=False))
+        res = etree.tostring(root, pretty_print=False)
+        _logger.debug(res)
+        return base64.b64encode(res)
     
     def _payerse_generate_checksum(self, data):
         """Generate and return an md5 cheksum."""
@@ -197,16 +204,14 @@ class AcquirerPayerSE(models.Model):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
         
-        _logger.info(pprint.pformat(partner_values))
-        _logger.info(pprint.pformat(tx_values))
+        _logger.debug(pprint.pformat(partner_values))
+        _logger.debug(pprint.pformat(tx_values))
         
         payer_tx_values = dict(tx_values)
         if not payer_tx_values.get('return_url'):
             payer_tx_values['return_url'] = self.payerse_return_address
         if not payer_tx_values.get('cancel_url'):
             payer_tx_values['cancel_url'] = self.payerse_cancel_address
-        if not payer_tx_values.get('callback_url'):
-            payer_tx_values['callback_url'] = PayerSEController._callback_url
 
         #Calculate order lines that will be sent to Payer
         reference = payer_tx_values.get('reference')
@@ -232,7 +237,7 @@ class AcquirerPayerSE(models.Model):
                 i += 1
             payer_tx_values['payer_order_lines'] = payer_order_lines
         
-        #Check that order lines add up to the given amount and adjust if necessary
+        #Check that order lines add up to the given total and adjust if necessary
         diff = payer_tx_values['amount'] - total
         if abs(diff) > 0.01:
             payer_tx_values['payer_order_lines'].append({
@@ -289,15 +294,15 @@ class TxPayerSE(models.Model):
     
     @api.model
     def _payerse_form_get_tx_from_data(self, data):
-        _logger.info('get txfrom data')
-        reference = data[0].get('payer_merchant_reference_id', False)
+        _logger.info('get tx from data')
+        reference = data[0].get('order_id', False)
         if reference:
             tx = self.env['payment.transaction'].search([('reference', '=', reference)])
             if len(tx) != 1:
                 error_msg = 'Payer: callback referenced non-existing transaction: %s' % reference
                 _logger.warning(error_msg)
                 raise ValidationError(error_msg)
-            return tx[0]
+            return tx
         else:
             error_msg = 'Payer: callback did not contain a tx reference.'
             _logger.warning(error_msg)
@@ -313,14 +318,7 @@ class TxPayerSE(models.Model):
         
         checksum = post.get('md5sum', None)
         url = url[0:url.rfind('&')]                 # Remove checksum
-        url=urllib2.unquote(url).decode('utf8')     # Decode to UTF-8 from URI
-        
-        #~ msg = "\npost:\n"
-        #~ for key in post:
-            #~ msg += "\t%s:\t\t%s\n" % (key, post[key])
-        #~ msg += "\nurl:\t%s\ndata:\t%s\nip:\t%s" % (url, callback_data, ip)
-        #~ _logger.info(msg)
-        
+        url=urllib2.unquote(url).decode('utf8')     # Convert to UTF-8
         expected = tx.acquirer_id._payerse_generate_checksum(url)
         testmode = post.get('payer_testmode', 'false') == 'true'
         ip = tx.acquirer_id.payerse_get_ip(request)
@@ -340,15 +338,14 @@ class TxPayerSE(models.Model):
     def _payerse_form_validate(self, tx, data):
         _logger.info('validate form')
         post = data[0]
-        #order_id = post.get('order_id', False)                        #Original parameter added by merchants shop.
         #payer_testmode = post.get('payer_testmode', False)	        #[true|false] – indicates test or live mode    
         payer_callback_type = post.get('payer_callback_type', False)    #[authorize|settle|store] – callback type
         payer_added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
         payer_payment_id = post.get('payer_payment_id', False)	        #[xxx@yyyyy – reference: max 64 characters long] - id
         #md5sum = post.get('md5sum', False)
-                
+        
         tx_data = {
-            'payerse_payment_type': post.get('payer_payment_type', False),  #[invoice|card|sms|wywallet|bank|enter] – payment type
+            'payerse_payment_type': post.get('payer_payment_type', '')
         }
         
         if payer_payment_id:
@@ -360,7 +357,7 @@ class TxPayerSE(models.Model):
             return False
         elif payer_callback_type == 'settle':
             _logger.info('Validated Payer payment for tx %s: set as done' % (tx.reference))
-            tx_data.update(state='done', date_validate=fields.Datetime.now())
+            tx_data.update(state='done', date_validate=fields.Datetime.now(), state_message='Payment verified by Payer')
         elif payer_callback_type == 'auth':
             _logger.info('Received authorization for Payer payment %s: set as pending' % (tx.reference))
             tx_data.update(state='pending', state_message='Payment authorized by Payer')
@@ -371,14 +368,12 @@ class TxPayerSE(models.Model):
             error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
             _logger.info(error)
             tx_data.update(state='error', state_message=error)
+            tx.write(tx_data)
+            return False
         return tx.write(tx_data)
     
     @api.model
     def payerse_create(self, values):
-        #~ msg = "\n"
-        #~ for key in values:
-            #~ msg += "%s:\t\t%s\n" % (key, values[key])
-        #~ _logger.info(msg)
         acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])
         values['payerse_testmode'] = True if acquirer.environment == 'test' else False
         
