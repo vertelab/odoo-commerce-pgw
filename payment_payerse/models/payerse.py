@@ -285,10 +285,12 @@ class TxPayerSE(models.Model):
     
     @api.model
     def _payerse_form_get_tx_from_data(self, data):
-        _logger.info('get tx from data')
+        _logger.debug('get tx from data')
         reference = data[0].get('order_id', False)
         if reference:
-            tx = self.env['payment.transaction'].search([('reference', '=', reference)])
+            # Search for sale order name instead of reference, to avoid bugs in payment module
+            so = self.env['sale.order'].search([('name', '=', reference)])
+            tx = self.env['payment.transaction'].search([('sale_order_id', '=', so.id)])
             if len(tx) != 1:
                 error_msg = 'Payer: callback referenced non-existing transaction: %s' % reference
                 _logger.warning(error_msg)
@@ -301,7 +303,7 @@ class TxPayerSE(models.Model):
     
     @api.model
     def _payerse_form_get_invalid_parameters(self, tx, data):
-        _logger.info('get invalid parameters')
+        _logger.debug('get invalid parameters')
         invalid_parameters = []
         post = data[0]
         url = data[1]
@@ -326,7 +328,7 @@ class TxPayerSE(models.Model):
     
     @api.model
     def _payerse_form_validate(self, tx, data):
-        _logger.info('validate form')
+        _logger.debug('validate form')
         post = data[0]
         #payer_testmode = post.get('payer_testmode', False)	        #[true|false] – indicates test or live mode    
         payer_callback_type = post.get('payer_callback_type', False)    #[authorize|settle|store] – callback type
@@ -346,17 +348,17 @@ class TxPayerSE(models.Model):
         if not payer_callback_type:
             return False
         elif payer_callback_type == 'settle':
-            _logger.info('Validated Payer payment for tx %s: set as done' % (tx.reference))
+            _logger.debug('Validated Payer payment for tx %s: set as done' % (tx.reference))
             tx_data.update(state='done', date_validate=fields.Datetime.now(), state_message='Payment verified by Payer')
         elif payer_callback_type == 'auth':
-            _logger.info('Received authorization for Payer payment %s: set as pending' % (tx.reference))
+            _logger.debug('Received authorization for Payer payment %s: set as pending' % (tx.reference))
             tx_data.update(state='pending', state_message='Payment authorized by Payer')
         elif payer_callback_type == 'store':
-            _logger.info('Received back to store callback from Payer payment %s' % (tx.reference))
+            _logger.debug('Received back to store callback from Payer payment %s' % (tx.reference))
             return True
         else:
             error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
-            _logger.info(error)
+            _logger.warning(error)
             tx_data.update(state='error', state_message=error)
             tx.write(tx_data)
             return False
