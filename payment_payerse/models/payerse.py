@@ -37,6 +37,7 @@ _logger = logging.getLogger(__name__)
 class AcquirerPayerSE(models.Model):
     _inherit = 'payment.acquirer'
     
+    website_icon = fields.Char(string='Icon location', help='Custom icon to use for this acquirer.')
     payerse_agent_id = fields.Char(string='Payer Agent ID',
         required_if_provider='payerse')
     payerse_key_1 = fields.Char(string='Payer Key 1',
@@ -329,8 +330,7 @@ class TxPayerSE(models.Model):
     @api.model
     def _payerse_form_validate(self, tx, data):
         _logger.debug('validate form')
-        post = data[0]
-        #payer_testmode = post.get('payer_testmode', False)	        #[true|false] – indicates test or live mode    
+        post = data[0]  
         payer_callback_type = post.get('payer_callback_type', False)    #[authorize|settle|store] – callback type
         payer_added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
         payer_payment_id = post.get('payer_payment_id', False)	        #[xxx@yyyyy – reference: max 64 characters long] - id
@@ -346,6 +346,10 @@ class TxPayerSE(models.Model):
             tx_data['payerse_added_fee'] = payer_added_fee
         
         if not payer_callback_type:
+            error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
+            _logger.warning(error)
+            tx_data.update(state='error', state_message=error)
+            tx.write(tx_data)
             return False
         elif payer_callback_type == 'settle':
             _logger.debug('Validated Payer payment for tx %s: set as done' % (tx.reference))
@@ -354,6 +358,7 @@ class TxPayerSE(models.Model):
             _logger.debug('Received authorization for Payer payment %s: set as pending' % (tx.reference))
             tx_data.update(state='pending', state_message='Payment authorized by Payer')
         elif payer_callback_type == 'store':
+            # Purpose unknown.Does not seem to be used. 
             _logger.debug('Received back to store callback from Payer payment %s' % (tx.reference))
             return True
         else:
