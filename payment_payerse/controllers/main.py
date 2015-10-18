@@ -35,7 +35,7 @@ _logger = logging.getLogger(__name__)
 class PayerSEController(http.Controller):
     _callback_url = "/payment/payerse/verify"
     
-    @http.route('/payment/payerse/verify', type='http', auth='none', method='GET')
+    @http.route('/payment/payerse/verify', type='http', auth='public', method='GET')
     def auth_payment(self, **post):
         _logger.debug('Processing Payer.se callback with post data:\n%s' % pprint.pformat(post))  # debug
         data = [post, request.httprequest.url, request.httprequest.remote_addr]
@@ -47,7 +47,7 @@ class PayerSEController(http.Controller):
             return ''
     
     # TODO: Delete test function or get rekt.
-    @http.route('/payment/payerse/test', type='http', auth='none', method='GET')
+    @http.route('/payment/payerse/test', type='http', auth='public', method='GET')
     def test(self, **post):
         url = request.httprequest.url
         url=urllib2.unquote(url).decode('utf8')

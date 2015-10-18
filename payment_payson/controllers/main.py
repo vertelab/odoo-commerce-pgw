@@ -33,7 +33,6 @@ import urllib2
 _logger = logging.getLogger(__name__)
 
 class PaysonController(http.Controller):
-    _callback_url = "/payment/payson/verify"
     
     @http.route('/payment/payson/verify', type='http', auth='none', method='GET')
     def auth_payment(self, **post):
@@ -61,10 +60,10 @@ class PaysonController(http.Controller):
         reference = post.get('reference')
         if not reference:
             return 'Error: No reference'
-        tx = self.env['payment.transaction'].search([('reference', '=', reference)])
+        tx = request.env['payment.transaction'].search([('reference', '=', reference)])
         if not tx:
             return 'Error: Transaction not found'
-        res = tx.payson_init_payment()
+        res = tx.sudo().payson_init_payment()
         if not res:
             return 'Error: Could not contact Payson'
         return werkzeug.utils.redirect(res, 300)

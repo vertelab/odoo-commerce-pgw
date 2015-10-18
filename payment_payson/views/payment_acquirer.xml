@@ -11,14 +11,13 @@
             <group attrs="{'invisible': [('provider', '!=', 'payson')]}">
                 <group>
                     <group>
+                        <field name="payson_email"/>
                         <field name="payson_agent_id"/>
                         <field name="payson_key"/>
                         <field name="payson_payment_method_card"/>
                         <field name="payson_payment_method_bank"/>
-                        <field name="payson_payment_method_wywallet"/>
+                        <field name="payson_payment_method_sms"/>
                         <field name="payson_payment_method_invoice"/>
-                        <field name="payson_payment_method_einvoice"/>
-                        <field name="payson_payment_method_instalment"/>
                         <field name="payson_return_address"/>
                         <field name="payson_cancel_address"/>
                     </group>
@@ -36,10 +35,13 @@
         <xpath expr='//notebook' position='inside'>
             <page string="Payson TX Details">
                 <group>
+					<field name="payson_uuid"/>
+<!--
                     <field name="payerse_payment_type"/>
                     <field name="payerse_testmode"/>
                     <field name="payerse_added_fee"/>
                     <field name="payerse_paymentid"/>
+-->
                 </group>
             </page>
         </xpath>
