@@ -158,12 +158,52 @@ class AcquirerPayson(models.Model):
 class TxPayson(models.Model):
     _inherit = 'payment.transaction'
     
-    payson_token               = fields.Char(string='Payson token')
-    payson_payment_type        = fields.Char(string='Payment type')
-    payson_testmode            = fields.Boolean(string='Testmode')
-    payson_added_fee           = fields.Float(string='Added fee')
-    payson_paymentid           = fields.Char(string='Payment ID')
-    payson_uuid                = fields.Char(string='Internal ID for redirection')
+    payson_token                = fields.Char(string='Payson token')
+    payson_payment_type         = fields.Char(string='Payment type')
+    payson_testmode             = fields.Boolean(string='Testmode')
+    payson_added_fee            = fields.Float(string='Added fee')
+    payson_paymentid            = fields.Char(string='Payment ID')
+    payson_uuid                 = fields.Char(string='Internal ID for redirection')
+    
+    payson_timestamp            = fields.Char(string='Timestamp')
+    payson_purchase_id          = fields.Integer(string='Payment ID')
+    payson_email                = fields.Char(string='Payment ID')
+    payson_status               = fields.Char(string='Payment ID')
+    payson_type                 = fields.Char(string='Payment ID')
+    payson_guarantee_status     = fields.Char(string='Payment ID')
+    payson_guarantee_dlt        = fields.Char(string='Payment ID')
+    payson_invoice_status       = fields.Char(string='Payment ID')
+    #payson_custom              = fields.Char(string='Payment ID')
+    #payson_tracking_id         = fields.Char(string='Payment ID')
+    payson_fee                  = fields.Float(string='Payment ID')
+    payson_shipping_ame         = fields.Char(string='Payment ID')
+    payson_shipping_street      = fields.Char(string='Payment ID')
+    payson_shipping_zip         = fields.Char(string='Payment ID')
+    payson_shipping_city        = fields.Char(string='Payment ID')
+    payson_shipping_country     = fields.Char(string='Payment ID')
+    
+    #responseEnvelope.timestamp 	    DateTime 	    Timestamp that identifies when the response was sent.
+    #purchaseId 	                    int 	        Payson purchaseId for this payment.
+    #senderEmail 	                    string 	        The sender's email address.
+    #status 	                        PaymentStatus 	The status of the payment.
+    #type 	                            PaymentType 	Type of payment.
+    #guaranteeStatus 	                GuaranteeStatus The status of an ongoing Payson Guarantee payment. This is only set if type is GUARANTEE.
+    #guaranteeDeadlineTimestamp 	    DateTime 	    Timestamp that identifies when the next guarantee deadline is due, if one exists.
+    #invoiceStatus 	                    InvoiceStatus 	The status of an ongoing Payson Invoice payment. This is only set if type is INVOICE.
+    #custom 	                        string 	        A free-form field submitted with the Pay request.
+    #trackingId 	                    string 	        Your own invoice or tracking id submitted with the Pay request.
+    #receiverFee 	                    decimal 	    The fee charged the receiver of the payment
+    
+    #Shipping address
+    #Invoice shipping                   address info.   Only set if the type is INVOICE and invoiceStatus is one of ORDERCREATED, SHIPPED, DONE or CREDITED. Please note that this address must be used as shipping address.
+    
+    #shippingAddress.name 	            string 	        The name of the shipment's receiver.
+    #shippingAddress.streetAddress 	    string 	        The shipment receiver's street address.
+    #shippingAddress.postalCode 	    string 	        The shipment receiver's postal code.
+    #shippingAddress.city 	            string 	        The shipment receiver's city.
+    #shippingAddress.country 	        string 	        The shipment receiver's country.
+    
+    
     
     
     @api.multi
@@ -254,7 +294,7 @@ class TxPayson(models.Model):
         ack = get_parameter('responseEnvelope.ack', payson_response)
         
         if ack != "SUCCESS":
-            _logger.warn("Contact with payson failed: %s" % payson_response)
+            _logger.warn("Contact with payson failed: responseEnvelope.ack = %s\nWhole response: %s" % (ack, payson_response))
             return False
         
         #Extract token
@@ -273,18 +313,20 @@ class TxPayson(models.Model):
     @api.model
     def _payson_form_get_tx_from_data(self, data):
         _logger.debug('get tx from data')
-        reference = data[0].get('order_id', False)
-        if reference:
+        
+        #Required 	token 	                Guid 	        The token obtained when creating the payment.
+        
+        token = data[0].get('token', False)
+        if token:
             # Search for sale order name instead of reference, to avoid bugs in payment module
-            so = self.env['sale.order'].search([('name', '=', reference)])
-            tx = self.env['payment.transaction'].search([('sale_order_id', '=', so.id)])
+            tx = self.env['payment.transaction'].search([('acquirer_reference', '=', token)])
             if len(tx) != 1:
-                error_msg = 'Payer: callback referenced non-existing transaction: %s' % reference
+                error_msg = 'Payson: callback referenced non-existing transaction: %s' % token
                 _logger.warning(error_msg)
                 raise ValidationError(error_msg)
             return tx
         else:
-            error_msg = 'Payer: callback did not contain a tx reference.'
+            error_msg = 'Payson: callback did not contain a token.'
             _logger.warning(error_msg)
             raise ValidationError(error_msg)
     
@@ -294,33 +336,70 @@ class TxPayson(models.Model):
         invalid_parameters = []
         post = data[0]
         url = data[1]
-        ip = data[2]
+        #ip = data[2]
         
-        checksum = post.get('md5sum', None)
-        url = url[0:url.rfind('&')]                 # Remove checksum
-        url=urllib2.unquote(url).decode('utf8')     # Convert to UTF-8
-        expected = tx.acquirer_id._payerse_generate_checksum(url)
-        testmode = post.get('payer_testmode', 'false') == 'true'
-        if checksum:
-            checksum = checksum.lower()
-        else:
-            invalid_parameters.append(('md5sum', 'None', 'a value'))
-        if checksum and checksum != expected:
-            invalid_parameters.append(('md5sum', checksum, expected))
-        if not tx.acquirer_id.payerse_validate_ip(ip):
-            invalid_parameters.append(('callback sender ip', ip, tx.acquirer_id._payerse_ip_whitelist))
-        if testmode != tx.payerse_testmode:
-            invalid_parameters.append(('test_mode', testmode, tx.payerse_testmode))
+        _logger.warn(url)
+        
+        if not tx.payson_verify_ipn_callback(url):
+            invalid_parameters.append(('validation', 'VERIFIED', 'INVALID'))
+        if post.get('responseEnvelope.ack') != 'SUCCESS':
+            invalid_parameters.append(('responseEnvelope.ack', 'SUCCESS', post.get('responseEnvelope.ack')))
+        if post.get('currencyCode') != tx.currency_id.name:
+            invalid_parameters.append('currencyCode', tx.currency_id.name, post.get('currencyId'))
+        if float(post.get('receiverList(0).amount')) != tx.amount:
+            invalid_parameters.append('receiverList(0).amount', tx.amount, post.get('receiverList(0).amount'))
+
+        #todd: 93
+        
+        
+        #PaymentDetails Response Parameters
+        #Parameter 	                        Data type 	    Description
+        
+        #responseEnvelope.ack 	            AckCode 	    Acknowledge code indicating the overall success of the request.
+        #responseEnvelope.timestamp 	    DateTime 	    Timestamp that identifies when the response was sent.
+        #purchaseId 	                    int 	        Payson purchaseId for this payment.
+        #senderEmail 	                    string 	        The sender's email address.
+        #status 	                        PaymentStatus 	The status of the payment.
+        #type 	                            PaymentType 	Type of payment.
+        #guaranteeStatus 	                GuaranteeStatus The status of an ongoing Payson Guarantee payment. This is only set if type is GUARANTEE.
+        #guaranteeDeadlineTimestamp 	    DateTime 	    Timestamp that identifies when the next guarantee deadline is due, if one exists.
+        #invoiceStatus 	                    InvoiceStatus 	The status of an ongoing Payson Invoice payment. This is only set if type is INVOICE.
+        #custom 	                        string 	        A free-form field submitted with the Pay request.
+        #trackingId 	                    string 	        Your own invoice or tracking id submitted with the Pay request.
+        #receiverList.receiver(n).email 	string 	        Email address of the receiver.
+        #receiverList.receiver(n).amount 	string 	        The amount to transfer to this receiver.
+        #receiverList.receiver(n).primary 	bool 	        Determines whether this is the primary receiver or not.
+        #currencyCode 	                    CurrencyCode 	A three-character currency code.
+        #receiverFee 	                    decimal 	    The fee charged the receiver of the payment
+        
+        #Shipping address
+        #Invoice shipping                   address info.   Only set if the type is INVOICE and invoiceStatus is one of ORDERCREATED, SHIPPED, DONE or CREDITED. Please note that this address must be used as shipping address.
+        #shippingAddress.name 	            string 	        The name of the shipment's receiver.
+        #shippingAddress.streetAddress 	    string 	        The shipment receiver's street address.
+        #shippingAddress.postalCode 	    string 	        The shipment receiver's postal code.
+        #shippingAddress.city 	            string 	        The shipment receiver's city.
+        #shippingAddress.country 	        string 	        The shipment receiver's country.
+        
         return invalid_parameters
     
+    @api.multi
+    def payson_verify_ipn_callback(self, url):
+        """Contact Payson to verify the recieved callback."""
+        self.ensure_one()
+        if self.acquirer_id.environment == 'test':
+            payson_response = urllib2.urlopen('https://test-api.payson.se/1.0/Validate/?%s' % url).read()
+        else:
+            payson_response = urllib2.urlopen('https://api.payson.se/1.0/Validate/?%s' % url).read()
+        return payson_response == 'VERIFIED'
+        
     @api.model
     def _payson_form_validate(self, tx, data):
         _logger.debug('validate form')
         post = data[0]  
-        payer_callback_type = post.get('payer_callback_type', False)    #[authorize|settle|store] – callback type
-        payer_added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
-        payer_payment_id = post.get('payer_payment_id', False)	        #[xxx@yyyyy – reference: max 64 characters long] - id
-        #md5sum = post.get('md5sum', False)
+        
+        cb_type = post.get('payer_callback_type', False)           
+        added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
+        payer_payment_id = post.get('payer_payment_id', False)	#[xxx@yyyyy – reference: max 64 characters long] - id
         
         tx_data = {
             'payerse_payment_type': post.get('payer_payment_type', '')

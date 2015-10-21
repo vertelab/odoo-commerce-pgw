@@ -30,21 +30,25 @@ import werkzeug
 import logging
 import pprint
 import urllib2
+
 _logger = logging.getLogger(__name__)
 
 class PaysonController(http.Controller):
     
-    @http.route('/payment/payson/verify', type='http', auth='none', method='GET')
+    @http.route('/payment/payson/verify', type='http', auth='public', method='POST')
     def auth_payment(self, **post):
         """
-        OkURL - The address that the response is sent to
-        PaysonRef - The unique id of this transaction in Payson's system
-        MD5 - MD5 hash to validate the call
-        RefNr - The reference used in your system, if set
-        Fee - The transaction fee
         """
         _logger.debug('Processing Payson callback with post data:\n%s' % pprint.pformat(post))  # debug
-        data = [post, request.httprequest.url, request.httprequest.remote_addr]
+        request.httprequest.parameter_storage_class = werkzeug.datastructures.ImmutableOrderedMultiDict
+        
+        _logger.warn('form data: %s' % request.httprequest.data)
+        return ''
+        #Darn it! Can't get ordered post data :(
+        #Possible solution: Ignore incoming post data. Perform PaymentDetails action and update transaction status from that.
+        
+        data = [post, request.httprequest.query_string] #, request.httprequest.remote_addr]
+        _logger.warn('query string: %s' % request.httprequest.query_string)
         res = request.env['payment.transaction'].sudo().form_feedback(data, 'payson')
         _logger.debug('value of res: %s' % res)
         if res:
@@ -52,7 +56,7 @@ class PaysonController(http.Controller):
         else:
             return ''
             
-    @http.route('/payment/payson/initPayment', type='http', auth='none', method='POST')
+    @http.route('/payment/payson/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
         """
         Contact Payson and redirect customer.
@@ -69,11 +73,7 @@ class PaysonController(http.Controller):
         return werkzeug.utils.redirect(res, 300)
     
     # TODO: Delete test function or get rekt.
-    @http.route('/payment/payson/test', type='http', auth='none', method='GET')
+    @http.route('/payment/payson/test', type='http', auth='none', method='POST')
     def test(self, **post):
-        url = request.httprequest.url
-        url=urllib2.unquote(url).decode('utf8')
-        url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
-        acquirer = request.env['payment.acquirer'].browse(2)
-        return acquirer._payerse_generate_checksum(url)
+        return request.httprequest.query_string
 
