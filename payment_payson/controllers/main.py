@@ -30,8 +30,21 @@ import werkzeug
 import logging
 import pprint
 import urllib2
+from io import TextIOBase
 
 _logger = logging.getLogger(__name__)
+
+def get_param_dict(text):
+    res = {}
+    text = text.replace('+', ' ')
+    while len(text) > 1:
+        n = text.find('=')
+        key = urllib2.unquote(text[:n]).decode('utf8')
+        text = text[n + 1:]
+        n = text.find('&')
+        res[key] = urllib2.unquote(text[:n]).decode('utf8')
+        text = text[n + 1:]
+    return res
 
 class PaysonController(http.Controller):
     
@@ -40,15 +53,18 @@ class PaysonController(http.Controller):
         """
         """
         _logger.debug('Processing Payson callback with post data:\n%s' % pprint.pformat(post))  # debug
-        request.httprequest.parameter_storage_class = werkzeug.datastructures.ImmutableOrderedMultiDict
         
-        _logger.warn('form data: %s' % request.httprequest.data)
-        return ''
-        #Darn it! Can't get ordered post data :(
-        #Possible solution: Ignore incoming post data. Perform PaymentDetails action and update transaction status from that.
-        
-        data = [post, request.httprequest.query_string] #, request.httprequest.remote_addr]
-        _logger.warn('query string: %s' % request.httprequest.query_string)
+        token = post.get('token')
+        if not token:
+            return 'Can I make this payment fail with an error or sumthin?'
+        tx = request.env['payment.transaction'].search([('acquirer_reference', '=', token)])
+        if len(tx) != 1:
+            return 'Can I make this payment fail with an error or sumthin?'
+        tx = tx[0]
+        #Verification requires access to post data in the original order. Odoo does not support this.
+        #Instead we look up Payment Details for the token we are given, and use that data to update transactions
+        lookup = tx._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': token})
+        data = get_param_dict(lookup)
         res = request.env['payment.transaction'].sudo().form_feedback(data, 'payson')
         _logger.debug('value of res: %s' % res)
         if res:
@@ -61,10 +77,17 @@ class PaysonController(http.Controller):
         """
         Contact Payson and redirect customer.
         """
-        reference = post.get('reference')
-        if not reference:
+        #TODO: Redirect to error page instead of ugly messages
+        if not post.get('reference'):
             return 'Error: No reference'
-        tx = request.env['payment.transaction'].search([('reference', '=', reference)])
+        if not post.get('email'):
+            return 'Error: No e-mail'
+        if not post.get('name'):
+            return 'Error: No name'
+        tx = request.env['payment.transaction'].search(
+            [('reference', '=', post.get('reference')),
+            ('partner_name', '=', post.get('name')),
+            ('partner_email', '=', post.get('email'))])
         if not tx:
             return 'Error: Transaction not found'
         res = tx.sudo().payson_init_payment()
@@ -73,7 +96,11 @@ class PaysonController(http.Controller):
         return werkzeug.utils.redirect(res, 300)
     
     # TODO: Delete test function or get rekt.
-    @http.route('/payment/payson/test', type='http', auth='none', method='POST')
+    @http.route('/payment/payson/test', type='http', auth='none', method='GET')
     def test(self, **post):
-        return request.httprequest.query_string
+        res = request.env['payment.transaction'].browse(20)._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': "d6cd0c40-a032-44e2-b004-d8de23433693"})
+        r_dict = get_param_dict(res)
+        for key in r_dict:
+            res += "<BR/><B>%s:</B> %s" % (key, r_dict[key])
+        return res
 

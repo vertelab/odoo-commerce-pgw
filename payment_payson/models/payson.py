@@ -83,13 +83,6 @@ class AcquirerPayson(models.Model):
         string='Cancellation return address',
         help='Default return address when payment is cancelled.',
         default='/shop/payment', required_if_provider='payerse')
-    payson_debug_mode = fields.Selection(string='Debug mode',
-        selection=[
-            ('silent', 'Silent'),
-            ('brief', 'Brief'),
-            ('verbose', 'Verbose')
-        ],
-        required=True, default='verbose')
     payson_application_id = fields.Char(string='Application ID')
     payson_fees_payer = fields.Selection(
         selection=[('PRIMARYRECEIVER', 'Store'), ('SENDER', 'Customer')],
@@ -100,36 +93,19 @@ class AcquirerPayson(models.Model):
         default='OPTIONAL')
     payson_show_receipt = fields.Boolean(string='Show receipt at checkout', default=True)
     
-    def payson_validate_ip(self, ip):
-        if ip in self._payerse_ip_whitelist:
-            return True
-        _logger.warning(
-            'Payer: callback from unauthorized ip: %s' % ip)
-        return False
-    
     def _get_providers(self, cr, uid, context=None):
         providers = super(AcquirerPayson, self)._get_providers(cr, uid,
             context=context)
         providers.append(['payson', 'Payson'])
         return providers
     
-    def _payson_generate_checksum(self, data):
-        """Generate and return an md5 cheksum."""
-        #String text = SellerEmail + ":" + Cost + ":" + ExtraCost + ":" + OkURL + ":" + GuaranteeOffered + Key
-        #String Generated_MD5_Hash_Value = MD5(text
-        return hashlib.md5(
-            data['SellerEmail'] + ":" + data['Cost'] + ":" +
-            data['ExtraCost'] + ":" + data['OkURL'] + ":" +
-            data['GuaranteeOffered'] + self.payson_key
-        ).hexdigest()
-    
     @api.multi
     def payson_form_generate_values(self, partner_values, tx_values):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
         
-        _logger.debug(pprint.pformat(partner_values))
-        _logger.debug(pprint.pformat(tx_values))
+        _logger.warn(pprint.pformat(partner_values))
+        _logger.warn(pprint.pformat(tx_values))
         return partner_values, tx_values
     
     @api.multi
@@ -139,8 +115,7 @@ class AcquirerPayson(models.Model):
     
     @api.multi
     def payson_compute_fees(self, amount, currency_id, country_id):
-        """Computes the fee for a transaction.
-        Broken. Fee is paid by customer and returned with callback."""
+        """TODO: Compute fees."""
         self.ensure_one()
         if not self.fees_active:
             return 0.0
@@ -158,29 +133,40 @@ class AcquirerPayson(models.Model):
 class TxPayson(models.Model):
     _inherit = 'payment.transaction'
     
-    payson_token                = fields.Char(string='Payson token')
     payson_payment_type         = fields.Char(string='Payment type')
-    payson_testmode             = fields.Boolean(string='Testmode')
-    payson_added_fee            = fields.Float(string='Added fee')
-    payson_paymentid            = fields.Char(string='Payment ID')
-    payson_uuid                 = fields.Char(string='Internal ID for redirection')
-    
     payson_timestamp            = fields.Char(string='Timestamp')
-    payson_purchase_id          = fields.Integer(string='Payment ID')
-    payson_email                = fields.Char(string='Payment ID')
-    payson_status               = fields.Char(string='Payment ID')
-    payson_type                 = fields.Char(string='Payment ID')
-    payson_guarantee_status     = fields.Char(string='Payment ID')
-    payson_guarantee_dlt        = fields.Char(string='Payment ID')
-    payson_invoice_status       = fields.Char(string='Payment ID')
-    #payson_custom              = fields.Char(string='Payment ID')
-    #payson_tracking_id         = fields.Char(string='Payment ID')
-    payson_fee                  = fields.Float(string='Payment ID')
-    payson_shipping_ame         = fields.Char(string='Payment ID')
-    payson_shipping_street      = fields.Char(string='Payment ID')
-    payson_shipping_zip         = fields.Char(string='Payment ID')
-    payson_shipping_city        = fields.Char(string='Payment ID')
-    payson_shipping_country     = fields.Char(string='Payment ID')
+    payson_purchase_id          = fields.Integer(string='Purchase ID')
+    payson_status               = fields.Char(selection = 
+        [('CREATED', 'Created'),
+        ('PENDING', 'Pending'),
+        ('PROCESSING', 'Processing'),
+        ('COMPLETED', 'Completed'),
+        ('CREDITED', 'Cedited'),
+        ('ERROR', 'Error'),
+        ('REVERSALERROR', 'Reversalerror'),
+        ('ABORTED', 'Aborted')],
+        string='Status', help="""
+CREATED - The payment request was received and has been created in Payson's system. Funds will be transferred once approval is received.
+PENDING - The sender has a pending transaction. A guarantee payment in progress has status pending. Please check guaranteeStatus for further details.
+PROCESSING - The payment is in progress, check again later.
+COMPLETED - The sender's transaction has completed.
+CREDITED - The sender's transaction has been credited.
+ERROR - The payment failed and all attempted transfers failed or all completed transfers were successfully reversed.
+REVERSALERROR - One or more transfers failed when attempting to reverse a payment.
+ABORTED - The payment was aborted before any money were transferred.
+""")
+    payson_type                 = fields.Selection([('TRANSFER', 'Transfer'), ('INVOICE', 'Invoice')], string='Payment type')
+    payson_invoice_status       = fields.Char(string='Invoice Status')
+    payson_fee                  = fields.Float(string='transaction Fee')
+    #payson_shipping_name        = fields.Char(string='Name')
+    #payson_shipping_street      = fields.Char(string='Address')
+    #payson_shipping_zip         = fields.Char(string='ZIP')
+    #payson_shipping_city        = fields.Char(string='City')
+    #payson_shipping_country     = fields.Char(string='Country')
+    #payson_guarantee_status     = fields.Char(string='Guarantee status')
+    #payson_guarantee_dlt        = fields.Char(string='Gauarantee Deadline')
+    #payson_custom               = fields.Char(string='Custom field for our use. Probably not needed')
+    #payson_tracking_id          = fields.Char(string='Tracking ID')
     
     #responseEnvelope.timestamp 	    DateTime 	    Timestamp that identifies when the response was sent.
     #purchaseId 	                    int 	        Payson purchaseId for this payment.
@@ -203,23 +189,9 @@ class TxPayson(models.Model):
     #shippingAddress.city 	            string 	        The shipment receiver's city.
     #shippingAddress.country 	        string 	        The shipment receiver's country.
     
-    
-    
-    
     @api.multi
     def payson_init_payment(self):
         self.ensure_one()
-        if self.state == 'done':
-            return False
-        headers={
-            #HTTP Headers
-            #Headers are used to specify API credentials and HTTP content type. The following HTTP Headers must be submitted with each request to Payson:
-            'PAYSON-SECURITY-USERID': self.acquirer_id.payson_agent_id, #Required. Your API User ID (AgentId).
-            'PAYSON-SECURITY-PASSWORD': self.acquirer_id.payson_key, #Required. Your API Password (MD5-key).
-            'Content-Type': 'application/x-www-form-urlencoded', #Required. Value must be: application/x-www-form-urlencoded
-        }
-        if self.acquirer_id.payson_application_id:
-            headers['PAYSON-APPLICATION-ID'] = self.acquirer_id.payson_application_id, #Optional. Your Application ID. (Only applicable if you have received one) 
         
         post={
             #Pay request parameters 
@@ -236,7 +208,7 @@ class TxPayson(models.Model):
             'feesPayer': self.acquirer_id.payson_fees_payer, #Optional. FeesPayer (SENDER/PRIMARYRECEIVER). The payer of the Payson fees. Default: PRIMARYRECEIVER
             #~ 'invoiceFee': '', #Optional. decimal. An invoice fee that will be added as an order item. Must be in the range 0 to 40 Note: This amount should be included in amount specified for the primary receiver
             #~ 'custom': '', #Optional. string (256). A free-form field for your own use. This will be returned in requests to the PaymentDetails API endpoint.
-            #~ 'trackingId': '', #Optional. string (128). Your own tracking id. This will be returned in requests to the PaymentDetails API endpoint.
+            'trackingId': self.reference, #Optional. string (128). Your own tracking id. This will be returned in requests to the PaymentDetails API endpoint.
             'guaranteeOffered': self.acquirer_id.payson_guarantee, #Optional. GuaranteeOffered (OPTIONAL/REQUIRED/NO). Whether Payson Guarantee is offered or not. Default: OPTIONAL
             'showReceiptPage': self.acquirer_id.payson_show_receipt, #Optional. bool. Whether to show the receipt page in Paysons checkout. Default: true
             
@@ -251,18 +223,19 @@ class TxPayson(models.Model):
         }
         
         #Optional. FundingConstraint (CREDITCARD/BANK/INVOICE/SMS). Specifies a list of allowed funding options for the payment. If this field is omitted, the payment can be funded by any funding type that is supported for the merchant (excluding invoice).
-        n = 0
-        if self.acquirer_id.payson_payment_method_card:
-            post['fundingList.fundingConstraint(%i).constraint' % n] = 'CREDITCARD'
-            n += 1
-        if self.acquirer_id.payson_payment_method_bank:
-            post['fundingList.fundingConstraint(%i).constraint' % n] = 'BANK'
-            n += 1
-        if self.acquirer_id.payson_payment_method_sms:
-            post['fundingList.fundingConstraint(%i).constraint' % n] = 'SMS'
-            n += 1
-        if self.acquirer_id.payson_payment_method_invoice:
-            post['fundingList.fundingConstraint(%i).constraint' % n] = 'INVOICE'
+        if (self.acquirer_id.payson_payment_method_card or self.acquirer_id.payson_payment_method_bank or self.acquirer_id.payson_payment_method_sms or self.acquirer_id.payson_payment_method_invoice):
+            n = 0
+            if self.acquirer_id.payson_payment_method_card:
+                post['fundingList.fundingConstraint(%i).constraint' % n] = 'CREDITCARD'
+                n += 1
+            if self.acquirer_id.payson_payment_method_bank:
+                post['fundingList.fundingConstraint(%i).constraint' % n] = 'BANK'
+                n += 1
+            if self.acquirer_id.payson_payment_method_sms:
+                post['fundingList.fundingConstraint(%i).constraint' % n] = 'SMS'
+                n += 1
+            if self.acquirer_id.payson_payment_method_invoice:
+                post['fundingList.fundingConstraint(%i).constraint' % n] = 'INVOICE'
         
         #Order Item Details
         #Note: Order Items are required for Invoice, and optional for all other payments types.
@@ -280,14 +253,11 @@ class TxPayson(models.Model):
             post['orderItemList.orderItem(%s).quantity' % n] = line.product_uom_qty
             post['orderItemList.orderItem(%s).unitPrice' % n] = line.price_unit
             post['orderItemList.orderItem(%s).taxPercentage' % n] = self.sale_order_id._amount_line_tax(line) / line.price_subtotal
+            n += 1
         
         #Send request
-        try:
-            if self.acquirer_id.environment == 'test':
-                payson_response = urllib2.urlopen(urllib2.Request('https://test-api.payson.se/1.0/Pay/', data=werkzeug.url_encode(post), headers=headers)).read()
-            else:
-                payson_response = urllib2.urlopen(urllib2.Request('https://api.payson.se/1.0/Pay/', data=werkzeug.url_encode(post), headers=headers)).read()
-        except:
+        payson_response = self._payson_send_post('api.payson.se/1.0/Pay/', post)
+        if not payson_response:
             return False
         
         #Check for success
@@ -316,9 +286,8 @@ class TxPayson(models.Model):
         
         #Required 	token 	                Guid 	        The token obtained when creating the payment.
         
-        token = data[0].get('token', False)
+        token = data.get('token', False)
         if token:
-            # Search for sale order name instead of reference, to avoid bugs in payment module
             tx = self.env['payment.transaction'].search([('acquirer_reference', '=', token)])
             if len(tx) != 1:
                 error_msg = 'Payson: callback referenced non-existing transaction: %s' % token
@@ -334,23 +303,15 @@ class TxPayson(models.Model):
     def _payson_form_get_invalid_parameters(self, tx, data):
         _logger.debug('get invalid parameters')
         invalid_parameters = []
-        post = data[0]
-        url = data[1]
-        #ip = data[2]
         
-        _logger.warn(url)
-        
-        if not tx.payson_verify_ipn_callback(url):
-            invalid_parameters.append(('validation', 'VERIFIED', 'INVALID'))
         if post.get('responseEnvelope.ack') != 'SUCCESS':
             invalid_parameters.append(('responseEnvelope.ack', 'SUCCESS', post.get('responseEnvelope.ack')))
         if post.get('currencyCode') != tx.currency_id.name:
             invalid_parameters.append('currencyCode', tx.currency_id.name, post.get('currencyId'))
         if float(post.get('receiverList(0).amount')) != tx.amount:
             invalid_parameters.append('receiverList(0).amount', tx.amount, post.get('receiverList(0).amount'))
-
-        #todd: 93
         
+        return invalid_parameters
         
         #PaymentDetails Response Parameters
         #Parameter 	                        Data type 	    Description
@@ -379,64 +340,73 @@ class TxPayson(models.Model):
         #shippingAddress.postalCode 	    string 	        The shipment receiver's postal code.
         #shippingAddress.city 	            string 	        The shipment receiver's city.
         #shippingAddress.country 	        string 	        The shipment receiver's country.
-        
-        return invalid_parameters
     
-    @api.multi
-    def payson_verify_ipn_callback(self, url):
-        """Contact Payson to verify the recieved callback."""
-        self.ensure_one()
-        if self.acquirer_id.environment == 'test':
-            payson_response = urllib2.urlopen('https://test-api.payson.se/1.0/Validate/?%s' % url).read()
-        else:
-            payson_response = urllib2.urlopen('https://api.payson.se/1.0/Validate/?%s' % url).read()
-        return payson_response == 'VERIFIED'
-        
     @api.model
     def _payson_form_validate(self, tx, data):
         _logger.debug('validate form')
-        post = data[0]  
+        tx_data = {}
+        if post.get('type'):
+            tx_data['payson_type'] = post.get('type')
+        if post.get('status'):
+            tx_data['payson_status'] = post.get('status')
+            status = post.get('status')
+            #TODO: Set status here
+            if status in ['CREATED', 'PENDING', 'PROCESSING']:
+                tx_data['state'] = 'draft'
+            elif status in ['COMPLETED', 'CREDITED']:
+                tx_data['state'] = 'done'
+            elif status in ['ERROR', 'REVERSALERROR']:
+                tx_data['state'] = 'error'
+            elif status == 'ABORTED':
+                tx_data['state'] = 'cancel'
+        if post.get('invoiceStatus'):
+            tx_data['payson_invoice_status'] = post.get('invoiceStatus')
+        if post.get('receiverFee'):
+            tx_data['payson_fee'] = post.get('receiverFee')
+        if post.get('purchaseId'):
+            tx_data['payson_purchase_id'] = post.get('purchaseId')
+        if post.get('responseEnvelope.timestamp'):
+            tx_data['payson_timestamp'] = post.get('responseEnvelope.timestamp')
         
-        cb_type = post.get('payer_callback_type', False)           
-        added_fee = post.get('payer_added_fee', False)	        #[when payer adds the fee for a specific payment type] - fee
-        payer_payment_id = post.get('payer_payment_id', False)	#[xxx@yyyyy – reference: max 64 characters long] - id
-        
-        tx_data = {
-            'payerse_payment_type': post.get('payer_payment_type', '')
-        }
-        
-        if payer_payment_id:
-            tx_data['acquirer_reference'] = payer_payment_id
-        if payer_added_fee:
-            tx_data['payerse_added_fee'] = payer_added_fee
-        
-        if not payer_callback_type:
-            error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
-            _logger.warning(error)
-            tx_data.update(state='error', state_message=error)
-            tx.write(tx_data)
-            return False
-        elif payer_callback_type == 'settle':
-            _logger.debug('Validated Payer payment for tx %s: set as done' % (tx.reference))
-            tx_data.update(state='done', date_validate=fields.Datetime.now(), state_message='Payment verified by Payer')
-        elif payer_callback_type == 'auth':
-            _logger.debug('Received authorization for Payer payment %s: set as pending' % (tx.reference))
-            tx_data.update(state='pending', state_message='Payment authorized by Payer')
-        elif payer_callback_type == 'store':
-            # Purpose unknown.Does not seem to be used. 
-            _logger.debug('Received back to store callback from Payer payment %s' % (tx.reference))
-            return True
-        else:
-            error = 'Received unrecognized status for Payer payment %s: %s, set as error' % (tx.reference, payer_callback_type)
-            _logger.warning(error)
-            tx_data.update(state='error', state_message=error)
-            tx.write(tx_data)
-            return False
         return tx.write(tx_data)
     
     @api.model
     def payson_create(self, values):
-        _logger.warn(values)
+        _logger.warn(self.env.context)
         acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])
-        values['partner_name'] = "foo barson"
         return values
+    
+    @api.multi
+    def _payson_send_post(self, url, post):
+        """
+        Sends a post to the given url with the correct headers.
+        """
+        self.ensure_one()
+        headers={
+            #HTTP Headers
+            #Headers are used to specify API credentials and HTTP content type. The following HTTP Headers must be submitted with each request to Payson:
+            'PAYSON-SECURITY-USERID': self.acquirer_id.payson_agent_id, #Required. Your API User ID (AgentId).
+            'PAYSON-SECURITY-PASSWORD': self.acquirer_id.payson_key, #Required. Your API Password (MD5-key).
+            'Content-Type': 'application/x-www-form-urlencoded', #Required. Value must be: application/x-www-form-urlencoded
+        }
+        if self.acquirer_id.payson_application_id:
+            headers['PAYSON-APPLICATION-ID'] = self.acquirer_id.payson_application_id, #Optional. Your Application ID. (Only applicable if you have received one) 
+        try:
+            if self.acquirer_id.environment == 'test':
+                payson_response = urllib2.urlopen(urllib2.Request('https://test-%s' % url, data=werkzeug.url_encode(post), headers=headers)).read()
+            else:
+                payson_response = urllib2.urlopen(urllib2.Request('https://%s' % url, data=werkzeug.url_encode(post), headers=headers)).read()
+        except:
+            return False
+        return payson_response
+    
+    #~ @api.multi
+    #~ def payson_verify_ipn_callback(self, url):
+        #~ """Contact Payson to verify the recieved callback."""
+        #~ self.ensure_one()
+        #~ if self.acquirer_id.environment == 'test':
+            #~ payson_response = urllib2.urlopen('https://test-api.payson.se/1.0/Validate/?%s' % url).read()
+        #~ else:
+            #~ payson_response = urllib2.urlopen('https://api.payson.se/1.0/Validate/?%s' % url).read()
+        #~ return payson_response == 'VERIFIED'
+    
