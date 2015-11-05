@@ -15,6 +15,10 @@
                         <field name="payson_agent_id"/>
                         <field name="payson_key"/>
                         <field name="payson_application_id"/>
+                        <field name="payson_show_receipt"/>
+                        <field name="payson_fees_payer"/>
+                        <field name="payson_guarantee"/>
+                        <p>Unchecking all payment methods will use the default methods for your account.</p>
                         <field name="payson_payment_method_card"/>
                         <field name="payson_payment_method_bank"/>
                         <field name="payson_payment_method_sms"/>
@@ -36,28 +40,16 @@
         <xpath expr='//notebook' position='inside'>
             <page string="Payson TX Details">
                 <group>
-<!--
-                    <field name="payerse_payment_type"/>
-                    <field name="payerse_testmode"/>
-                    <field name="payerse_added_fee"/>
-                    <field name="payerse_paymentid"/>
--->
+                    <field name="payson_payment_type"/>
+                    <field name="payson_purchase_id"/>
+                    <field name="payson_timestamp"/>
+                    <field name="payson_status"/>
+                    
                 </group>
             </page>
         </xpath>
     </field>
 </record>
-
-<!--
-<template id="payment" inherit_id="website_sale.payment">
--->
-<!-- Enable custom icons in webshop -->
-<!--
-    <xpath expr="//div[@id='payment_method']//img" position="attributes">
-        <attribute name="t-att-src">acquirer.website_icon or '/payment_%s/static/src/img/%s_icon.png' % (acquirer.provider, acquirer.provider)</attribute>
-    </xpath>
-</template>
--->
 
 </data>
 </openerp>

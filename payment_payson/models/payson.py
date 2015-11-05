@@ -157,7 +157,6 @@ ABORTED - The payment was aborted before any money were transferred.
 """)
     payson_type                 = fields.Selection([('TRANSFER', 'Transfer'), ('INVOICE', 'Invoice')], string='Payment type')
     payson_invoice_status       = fields.Char(string='Invoice Status')
-    payson_fee                  = fields.Float(string='transaction Fee')
     #payson_shipping_name        = fields.Char(string='Name')
     #payson_shipping_street      = fields.Char(string='Address')
     #payson_shipping_zip         = fields.Char(string='ZIP')
@@ -362,7 +361,7 @@ ABORTED - The payment was aborted before any money were transferred.
         if post.get('invoiceStatus'):
             tx_data['payson_invoice_status'] = post.get('invoiceStatus')
         if post.get('receiverFee'):
-            tx_data['payson_fee'] = post.get('receiverFee')
+            tx_data['fee'] = post.get('receiverFee')
         if post.get('purchaseId'):
             tx_data['payson_purchase_id'] = post.get('purchaseId')
         if post.get('responseEnvelope.timestamp'):
