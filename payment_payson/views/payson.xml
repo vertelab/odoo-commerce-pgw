@@ -5,8 +5,8 @@
         <template id="payson_acquirer_button">
             <form t-att-action="tx_url" method="post" target="_self">
                 <input type="hidden" name="reference" t-att-value="tx_values['reference']"/>
-                <input type="name" name="reference" t-att-value="tx_values['partner_name']"/>
-                <input type="email" name="reference" t-att-value="tx_values['partner_email']"/>
+                <input type="hidden" name="reference" t-att-value="partner_values['partner_name']"/>
+                <input type="hidden" name="reference" t-att-value="partner_values['partner_email']"/>
                 <!-- submit -->
                 <button type="submit" width="100px"
                     t-att-class="submit_class">

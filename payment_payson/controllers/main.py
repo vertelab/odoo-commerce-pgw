@@ -51,6 +51,7 @@ class PaysonController(http.Controller):
     @http.route('/payment/payson/verify', type='http', auth='public', method='POST')
     def auth_payment(self, **post):
         """
+        Foo.
         """
         _logger.debug('Processing Payson callback with post data:\n%s' % pprint.pformat(post))  # debug
         
@@ -71,7 +72,7 @@ class PaysonController(http.Controller):
             return 'TRUE'
         else:
             return ''
-            
+        
     @http.route('/payment/payson/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
         """
@@ -94,13 +95,5 @@ class PaysonController(http.Controller):
         if not res:
             return 'Error: Could not contact Payson'
         return werkzeug.utils.redirect(res, 300)
-    
-    # TODO: Delete test function or get rekt.
-    @http.route('/payment/payson/test', type='http', auth='none', method='GET')
-    def test(self, **post):
-        res = request.env['payment.transaction'].browse(20)._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': "d6cd0c40-a032-44e2-b004-d8de23433693"})
-        r_dict = get_param_dict(res)
-        for key in r_dict:
-            res += "<BR/><B>%s:</B> %s" % (key, r_dict[key])
-        return res
+        
 
