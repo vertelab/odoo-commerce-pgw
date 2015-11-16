@@ -250,17 +250,15 @@ ABORTED - The payment was aborted before any money were transferred.
             post['orderItemList.orderItem(%s).description' % n] = limit_string(line.name)
             post['orderItemList.orderItem(%s).sku' % n] = limit_string(line.product_id and line.product_id.default_code or 'NONE404')
             post['orderItemList.orderItem(%s).quantity' % n] = line.product_uom_qty
-            post['orderItemList.orderItem(%s).unitPrice' % n] = line.price_unit
+            post['orderItemList.orderItem(%s).unitPrice' % n] = line.price_subtotal / line.product_uom_qty
             post['orderItemList.orderItem(%s).taxPercentage' % n] = self.sale_order_id._amount_line_tax(line) / line.price_subtotal
             n += 1
         
+        _logger.debug('payson post data:\n%s' % post)
+        
         #Send request
-        if self.acquirer_id.environment == 'test':
-            payson_response = self._payson_send_post('api.payson.se/1.0/Pay/', post)
-        else:
-            payson_response = self._payson_send_post('https://api.payson.se/1.0/Pay/', post)
-        if not payson_response:
-            return False
+        payson_response = self._payson_send_post('api.payson.se/1.0/Pay/', post)
+
         
         #Check for success
         ack = get_parameter('responseEnvelope.ack', payson_response)
@@ -303,15 +301,15 @@ ABORTED - The payment was aborted before any money were transferred.
     
     @api.model
     def _payson_form_get_invalid_parameters(self, tx, data):
-        _logger.debug('get invalid parameters')
+        _logger.debug('get invalid parameters:\n%s' % data)
         invalid_parameters = []
         
-        if post.get('responseEnvelope.ack') != 'SUCCESS':
-            invalid_parameters.append(('responseEnvelope.ack', 'SUCCESS', post.get('responseEnvelope.ack')))
-        if post.get('currencyCode') != tx.currency_id.name:
-            invalid_parameters.append('currencyCode', tx.currency_id.name, post.get('currencyId'))
-        if float(post.get('receiverList(0).amount')) != tx.amount:
-            invalid_parameters.append('receiverList(0).amount', tx.amount, post.get('receiverList(0).amount'))
+        if data.get('responseEnvelope.ack') != 'SUCCESS':
+            invalid_parameters.append(('responseEnvelope.ack', 'SUCCESS', data.get('responseEnvelope.ack')))
+        if data.get('currencyCode') != tx.currency_id.name:
+            invalid_parameters.append('currencyCode', tx.currency_id.name, data.get('currencyId'))
+        if float(data.get('receiverList.receiver(0).amount')) != tx.amount:
+            invalid_parameters.append('receiverList.receiver(0).amount', tx.amount, data.get('receiverList.receiver(0).amount'))
         
         return invalid_parameters
         
@@ -347,11 +345,11 @@ ABORTED - The payment was aborted before any money were transferred.
     def _payson_form_validate(self, tx, data):
         _logger.debug('validate form')
         tx_data = {}
-        if post.get('type'):
-            tx_data['payson_type'] = post.get('type')
-        if post.get('status'):
-            tx_data['payson_status'] = post.get('status')
-            status = post.get('status')
+        if data.get('type') and data.get('type') in ['GUARANTEE', 'TRANSFER', 'INVOICE']:
+            tx_data['payson_type'] = data.get('type')
+        if data.get('status'):
+            tx_data['payson_status'] = data.get('status')
+            status = data.get('status')
             #TODO: Set status here
             if status in ['CREATED', 'PENDING', 'PROCESSING']:
                 tx_data['state'] = 'draft'
@@ -361,14 +359,14 @@ ABORTED - The payment was aborted before any money were transferred.
                 tx_data['state'] = 'error'
             elif status == 'ABORTED':
                 tx_data['state'] = 'cancel'
-        if post.get('invoiceStatus'):
-            tx_data['payson_invoice_status'] = post.get('invoiceStatus')
-        if post.get('receiverFee'):
-            tx_data['fee'] = post.get('receiverFee')
-        if post.get('purchaseId'):
-            tx_data['payson_purchase_id'] = post.get('purchaseId')
-        if post.get('responseEnvelope.timestamp'):
-            tx_data['payson_timestamp'] = post.get('responseEnvelope.timestamp')
+        if data.get('invoiceStatus'):
+            tx_data['payson_invoice_status'] = data.get('invoiceStatus')
+        if data.get('receiverFee'):
+            tx_data['fee'] = data.get('receiverFee')
+        if data.get('purchaseId'):
+            tx_data['payson_purchase_id'] = data.get('purchaseId')
+        if data.get('responseEnvelope.timestamp'):
+            tx_data['payson_timestamp'] = data.get('responseEnvelope.timestamp')
         
         return tx.write(tx_data)
     

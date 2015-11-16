@@ -108,6 +108,6 @@ class PaysonController(http.Controller):
         _logger.warn('res: %s' % res)
         if not res:
             return 'Error: Could not contact Payson'
-        return werkzeug.utils.redirect(res, 300)
+        return werkzeug.utils.redirect(res, 302)
         
 
