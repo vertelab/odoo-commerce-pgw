@@ -78,20 +78,34 @@ class PaysonController(http.Controller):
         """
         Contact Payson and redirect customer.
         """
-        #TODO: Redirect to error page instead of ugly messages
-        if not post.get('reference'):
-            return 'Error: No reference'
-        if not post.get('email'):
-            return 'Error: No e-mail'
-        if not post.get('name'):
-            return 'Error: No name'
-        tx = request.env['payment.transaction'].search(
-            [('reference', '=', post.get('reference')),
-            ('partner_name', '=', post.get('name')),
-            ('partner_email', '=', post.get('email'))])
+        
+        #order = request.website.sale_get_order(context=context)
+        _logger.warn('init_payment')
+        tx_id = request.session.get('sale_transaction_id')
+        _logger.warn('tx_id: %s' % tx_id)
+        if not tx_id:
+            return 'Error: Transaction not found'
+        tx = request.env['payment.transaction'].sudo().browse(tx_id)
         if not tx:
             return 'Error: Transaction not found'
+        
+        
+        #TODO: Redirect to error page instead of ugly messages
+        #~ if not post.get('reference'):
+            #~ return 'Error: No reference'
+        #~ if not post.get('email'):
+            #~ return 'Error: No e-mail'
+        #~ if not post.get('name'):
+            #~ return 'Error: No name'
+        #~ tx = request.env['payment.transaction'].search(
+            #~ [('reference', '=', post.get('reference')),
+            #~ ('partner_name', '=', post.get('name')),
+            #~ ('partner_email', '=', post.get('email'))])
+        #~ if not tx:
+            #~ return 'Error: Transaction not found'
+        _logger.warn('tx found')
         res = tx.sudo().payson_init_payment()
+        _logger.warn('res: %s' % res)
         if not res:
             return 'Error: Could not contact Payson'
         return werkzeug.utils.redirect(res, 300)

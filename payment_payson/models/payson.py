@@ -255,7 +255,10 @@ ABORTED - The payment was aborted before any money were transferred.
             n += 1
         
         #Send request
-        payson_response = self._payson_send_post('api.payson.se/1.0/Pay/', post)
+        if self.acquirer_id.environment == 'test':
+            payson_response = self._payson_send_post('api.payson.se/1.0/Pay/', post)
+        else:
+            payson_response = self._payson_send_post('https://api.payson.se/1.0/Pay/', post)
         if not payson_response:
             return False
         
