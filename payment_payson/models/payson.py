@@ -67,13 +67,17 @@ class AcquirerPayson(models.Model):
     payson_key = fields.Char(string='Payson Key',
         help='The preshared key.', required_if_provider='payson')
     payson_payment_method_card = fields.Boolean(
-        string='Activate card payments')
+        string='Activate card payments',
+        help='Unchecking all payment methods will use the default methods for your account.')
     payson_payment_method_bank = fields.Boolean(
-        string='Activate bank payments')
+        string='Activate bank payments',
+        help='Unchecking all payment methods will use the default methods for your account.')
     payson_payment_method_sms = fields.Boolean(
-        string='Activate SMS payments')
+        string='Activate SMS payments',
+        help='Unchecking all payment methods will use the default methods for your account.')
     payson_payment_method_invoice = fields.Boolean(
-        string='Activate invoice payments')
+        string='Activate invoice payments',
+        help='Unchecking all payment methods will use the default methods for your account.')
     payson_return_address = fields.Char(
         string='Success return address',
         help='Default return address when payment is successfull.',
@@ -103,9 +107,6 @@ class AcquirerPayson(models.Model):
     def payson_form_generate_values(self, partner_values, tx_values):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
-        
-        _logger.warn(pprint.pformat(partner_values))
-        _logger.warn(pprint.pformat(tx_values))
         return partner_values, tx_values
     
     @api.multi
@@ -119,14 +120,14 @@ class AcquirerPayson(models.Model):
         self.ensure_one()
         if not self.fees_active:
             return 0.0
-        country = self.env['res.country'].browse(country_id)
-        if country and self.company_id.country_id.id == country.id:
-            percentage = self.fees_dom_var
-            fixed = self.fees_dom_fixed
-        else:
-            percentage = self.fees_int_var
+        currency = self.env['res.currency'].browse(currency_id)
+        if currency and currency.name == 'EUR':
             fixed = self.fees_int_fixed
-        fees = (percentage / 100.0 * amount + fixed ) / (1 - percentage / 100.0)
+            percentage = self.fees_int_var
+        elif currency and currency.name == 'SEK':
+            fixed = self.fees_dom_fixed
+            percentage = self.fees_dom_var
+        fees = (percentage / 100.0 * amount + fixed )
         return fees
 
 
@@ -165,7 +166,6 @@ ABORTED - The payment was aborted before any money were transferred.
     #payson_guarantee_status     = fields.Char(string='Guarantee status')
     #payson_guarantee_dlt        = fields.Char(string='Gauarantee Deadline')
     #payson_custom               = fields.Char(string='Custom field for our use. Probably not needed')
-    #payson_tracking_id          = fields.Char(string='Tracking ID')
     
     #responseEnvelope.timestamp 	    DateTime 	    Timestamp that identifies when the response was sent.
     #purchaseId 	                    int 	        Payson purchaseId for this payment.
@@ -201,6 +201,8 @@ ABORTED - The payment was aborted before any money were transferred.
             'senderEmail': limit_string(self.partner_email), #Required. string (128). Email address of the person sending money. This is the Payson account where the settled amount is transferred from.
             'senderFirstName': limit_string(_partner_split_name(self.partner_name)[0]), #Required. string (128). First name of the buyer as entered during checkout.
             'senderLastName': limit_string(_partner_split_name(self.partner_name)[1]), #Required. string (128). Last name of the buyer as entered during checkout.
+            
+            #TODO: Add support for other languages.
             
             'localeCode': 'SV', #Optional. LocaleCode (SV/EN/FI/DK/NO). Locale of pages displayed by Payson during payment. Default: SE
             'currencyCode': self.currency_id.name, #Optional. CurrencyCode (SEK/EUR). The currency used for the payment. Default: SEK
@@ -261,6 +263,9 @@ ABORTED - The payment was aborted before any money were transferred.
 
         
         #Check for success
+        if not payson_response:
+            return False
+        
         ack = get_parameter('responseEnvelope.ack', payson_response)
         
         if ack != "SUCCESS":
@@ -345,7 +350,7 @@ ABORTED - The payment was aborted before any money were transferred.
     def _payson_form_validate(self, tx, data):
         _logger.debug('validate form')
         tx_data = {}
-        if data.get('type') and data.get('type') in ['GUARANTEE', 'TRANSFER', 'INVOICE']:
+        if data.get('type'):
             tx_data['payson_type'] = data.get('type')
         if data.get('status'):
             tx_data['payson_status'] = data.get('status')
@@ -393,9 +398,9 @@ ABORTED - The payment was aborted before any money were transferred.
             headers['PAYSON-APPLICATION-ID'] = self.acquirer_id.payson_application_id, #Optional. Your Application ID. (Only applicable if you have received one) 
         try:
             if self.acquirer_id.environment == 'test':
-                payson_response = urllib2.urlopen(urllib2.Request('https://test-%s' % url, data=werkzeug.url_encode(post), headers=headers)).read()
+                payson_response = urllib2.urlopen(urllib2.Request('https://test-%s' % url, data=werkzeug.url_encode(post), headers=headers), timeout=10).read()
             else:
-                payson_response = urllib2.urlopen(urllib2.Request('https://%s' % url, data=werkzeug.url_encode(post), headers=headers)).read()
+                payson_response = urllib2.urlopen(urllib2.Request('https://%s' % url, data=werkzeug.url_encode(post), headers=headers), timeout=10).read()
         except:
             return False
         return payson_response

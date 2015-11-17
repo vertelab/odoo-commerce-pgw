@@ -18,7 +18,6 @@
                         <field name="payson_show_receipt"/>
                         <field name="payson_fees_payer"/>
                         <field name="payson_guarantee"/>
-                        <p>Unchecking all payment methods will use the default methods for your account.</p>
                         <field name="payson_payment_method_card"/>
                         <field name="payson_payment_method_bank"/>
                         <field name="payson_payment_method_sms"/>
@@ -44,7 +43,8 @@
                     <field name="payson_purchase_id"/>
                     <field name="payson_timestamp"/>
                     <field name="payson_status"/>
-                    
+                    <field name="payson_type"/>
+                    <field name="payson_invoice_status"/>
                 </group>
             </page>
         </xpath>

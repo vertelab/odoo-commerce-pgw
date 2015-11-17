@@ -23,8 +23,7 @@
 'version': '0.1',
 'summary': 'Payment Acquirer: Payson Implementation',
 'category': 'Hidden',
-'description': """Payson Payment Acquirer
-    Simple integration. No IPN. No invoices.""",
+'description': """Payson Payment Acquirer""",
 'author': 'Vertel AB',
 'website': 'http://www.vertel.se',
 'depends': ['payment'],

@@ -56,22 +56,25 @@ class PaysonController(http.Controller):
         _logger.debug('Processing Payson callback with post data:\n%s' % pprint.pformat(post))  # debug
         
         token = post.get('token')
+        _logger.debug('token: |%s|' % token)
         if not token:
-            return 'Can I make this payment fail with an error or sumthin?'
-        tx = request.env['payment.transaction'].search([('acquirer_reference', '=', token)])
+            return ''
+        tx = request.env['payment.transaction'].sudo().search([('acquirer_reference', '=', token)])
         if len(tx) != 1:
-            return 'Can I make this payment fail with an error or sumthin?'
+            _logger.debug('no transaction found: %s' % tx)
+            return ''
         tx = tx[0]
         #Verification requires access to post data in the original order. Odoo does not support this.
         #Instead we look up Payment Details for the token we are given, and use that data to update transactions
-        lookup = tx._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': token})
-        data = get_param_dict(lookup)
-        res = request.env['payment.transaction'].sudo().form_feedback(data, 'payson')
-        _logger.debug('value of res: %s' % res)
-        if res:
-            return 'TRUE'
+        lookup = tx.sudo()._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': token})
+        _logger.debug('lookup: %s' % lookup)
+        if lookup:
+            data = get_param_dict(lookup)
+            res = request.env['payment.transaction'].sudo().form_feedback(data, 'payson')
+            _logger.debug('value of res: %s' % res)
         else:
-            return ''
+            _logger.debug('Payson lookup failed')
+        return ''
         
     @http.route('/payment/payson/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
