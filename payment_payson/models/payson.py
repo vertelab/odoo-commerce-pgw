@@ -360,6 +360,7 @@ ABORTED - The payment was aborted before any money were transferred.
                 tx_data['state'] = 'draft'
             elif status in ['COMPLETED', 'CREDITED']:
                 tx_data['state'] = 'done'
+                #TODO: set validation date
             elif status in ['ERROR', 'REVERSALERROR']:
                 tx_data['state'] = 'error'
             elif status == 'ABORTED':
