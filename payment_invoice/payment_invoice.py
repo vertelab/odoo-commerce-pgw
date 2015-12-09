@@ -46,7 +46,9 @@ class sale_order(models.Model):
             _logger.warn('res: %s' % res)
             inv = self.env['account.invoice'].browse(res['res_id'])
             inv.signal_workflow('invoice_open')
-            journal = self.env['account.journal'].browse(17)
+            journal = self.env['account.journal'].browse(
+                int(self.env['ir.config_parameter'].get_param('payment_invoice.journal_id'))
+            )
             
             values = {
                 'journal_id': journal.id,
