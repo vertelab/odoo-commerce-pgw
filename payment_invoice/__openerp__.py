@@ -19,17 +19,14 @@
 #
 ##############################################################################
 {
-'name': 'Payson Payment Acquirer',
+'name': 'Payment Invoice',
 'version': '0.1',
-'summary': 'Payment Acquirer: Payson Implementation',
+'summary': 'Payment Acquirer: Create paid invoice on payment.',
 'category': 'Hidden',
-'description': """Payson Payment Acquirer""",
+'description': """""",
 'author': 'Vertel AB',
 'website': 'http://www.vertel.se',
-'depends': ['payment'],
-'data': ['views/payson.xml',
-        'views/payment_acquirer.xml',
-        'data/payson.xml',
-],
+'depends': ['payment', 'sale'],
+'data': [],
 'installable': True,
 }
