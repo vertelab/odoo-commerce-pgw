@@ -252,8 +252,15 @@ ABORTED - The payment was aborted before any money were transferred.
             post['orderItemList.orderItem(%s).description' % n] = limit_string(line.name)
             post['orderItemList.orderItem(%s).sku' % n] = limit_string(line.product_id and line.product_id.default_code or 'NONE404')
             post['orderItemList.orderItem(%s).quantity' % n] = line.product_uom_qty
-            post['orderItemList.orderItem(%s).unitPrice' % n] = line.price_subtotal / line.product_uom_qty
-            post['orderItemList.orderItem(%s).taxPercentage' % n] = self.sale_order_id._amount_line_tax(line) / line.price_subtotal
+            if line.product_uom_qty > 0:
+                post['orderItemList.orderItem(%s).unitPrice' % n] = line.price_subtotal / line.product_uom_qty
+            else:
+                post['orderItemList.orderItem(%s).unitPrice' % n] = 0
+            if line.price_subtotal > 0:
+                post['orderItemList.orderItem(%s).taxPercentage' % n] = self.sale_order_id._amount_line_tax(line) / line.price_subtotal
+            else:
+                post['orderItemList.orderItem(%s).taxPercentage' % n] = 0
+                
             n += 1
         
         _logger.debug('payson post data:\n%s' % post)
