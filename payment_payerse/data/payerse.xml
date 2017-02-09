@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-    <data noupdate="0">
+    <data noupdate="1">
         <record id="payment_acquirer_payerse" model="payment.acquirer">
             <field name="name">Payer</field>
             <field name="provider">payerse</field>
@@ -12,12 +12,7 @@
             <field name="payerse_agent_id">TESTINSTALLATION</field>
             <field name="payerse_key_1">j3qh0b3B22sIyWulCZKeFJvIMx9mylLId2Qd4JEUAWtYJOacDKg9kCGWZE0oQKWUCDXwcshCfArOerQI2XGcpdYfIXtoyg02JWnLfuekVvZ1NGyFt5HJ8vOGj9VIeUzO</field>
             <field name="payerse_key_2">mzuP5yWQWzesjrRlfQToHSf1B2xjNseZRyFLWrsIRw12NIcTpW9XFdN76afIsjyaI4Muk543qTT5sWNHJLueP8aK8gjqqHrYB5jLYcEfWn0eaNMJo7O55PF3VOicmA2N</field>
-            <field name="payerse_payment_method_card">True</field>
-            <field name="payerse_payment_method_bank">True</field>
-            <field name="payerse_payment_method_invoice">True</field>
-            <field name="payerse_payment_method_einvoice">True</field>
-            <field name="payerse_payment_method_wywallet">True</field>
-            <field name="payerse_payment_method_instalment">True</field>
+            <field name="payerse_payment_method_auto">True</field>
             <field name="payerse_return_adress">/shop/payment/validate</field>
             <field name="payerse_cancel_adress">/shop/payment</field>
         </record>

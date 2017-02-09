@@ -23,14 +23,15 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm, Warning, RedirectWarning
 from openerp import http
 from openerp.http import request
-from openerp import SUPERUSER_ID
 import openerp.tools
-import string
-import werkzeug
-import logging
 import pprint
-import urllib2
+
+import logging
 _logger = logging.getLogger(__name__)
+
+#~ import string
+#~ import urllib2
+#~ import werkzeug
 
 class PayerSEController(http.Controller):
     _callback_url = "/payment/payerse/verify"
@@ -47,11 +48,11 @@ class PayerSEController(http.Controller):
             return ''
     
     # TODO: Delete test function or get rekt.
-    @http.route('/payment/payerse/test', type='http', auth='public', method='GET')
-    def test(self, **post):
-        url = request.httprequest.url
-        url=urllib2.unquote(url).decode('utf8')
-        url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
-        acquirer = request.env['payment.acquirer'].browse(2)
-        return acquirer._payerse_generate_checksum(url)
+    #~ @http.route('/payment/payerse/test', type='http', auth='public', method='GET')
+    #~ def test(self, **post):
+        #~ url = request.httprequest.url
+        #~ url=urllib2.unquote(url).decode('utf8')
+        #~ url = url.replace("/payment/payerse/test", "/payment/payerse/verify")
+        #~ acquirer = request.env['payment.acquirer'].browse(2)
+        #~ return acquirer._payerse_generate_checksum(url)
 

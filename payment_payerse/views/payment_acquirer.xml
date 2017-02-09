@@ -14,12 +14,13 @@
                         <field name="payerse_agent_id"/>
                         <field name="payerse_key_1"/>
                         <field name="payerse_key_2"/>
-                        <field name="payerse_payment_method_card"/>
-                        <field name="payerse_payment_method_bank"/>
-                        <field name="payerse_payment_method_wywallet"/>
-                        <field name="payerse_payment_method_invoice"/>
-                        <field name="payerse_payment_method_einvoice"/>
-                        <field name="payerse_payment_method_instalment"/>
+                        <field name="payerse_payment_method_auto"/>
+                        <field name="payerse_payment_method_card" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
+                        <field name="payerse_payment_method_bank" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
+                        <field name="payerse_payment_method_wywallet" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
+                        <field name="payerse_payment_method_invoice" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
+                        <field name="payerse_payment_method_einvoice" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
+                        <field name="payerse_payment_method_instalment" attrs="{'invisible': [('payerse_payment_method_auto', '=', True)]}"/>
                         <field name="payerse_return_address"/>
                         <field name="payerse_cancel_address"/>
                         <field name="payerse_debug_mode"/>

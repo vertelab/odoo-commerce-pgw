@@ -46,6 +46,8 @@ class AcquirerPayerSE(models.Model):
         required_if_provider='payerse')
     #~ payerse_auth_only = fields.Boolean(
         #~ string='Authorize only', default=False)
+    payerse_payment_method_auto = fields.Boolean(
+        string='Automatic Payment Options')
     payerse_payment_method_card = fields.Boolean(
         string='Activate card payments')
     payerse_payment_method_bank = fields.Boolean(
@@ -157,19 +159,22 @@ class AcquirerPayerSE(models.Model):
         database_overrides = etree.SubElement(root, "database_overrides")
         payment_methods = etree.SubElement(database_overrides, "accepted_payment_methods")
         # Can be bank, card, invoice, einvoice, wywallet, enter (= instalment plan), and auto (= card ???)
-        if self.payerse_payment_method_bank:
-            etree.SubElement(payment_methods, "payment_method").text = "bank"
-        if self.payerse_payment_method_card:
-            etree.SubElement(payment_methods, "payment_method").text = "card"
-        if self.payerse_payment_method_invoice:
-            etree.SubElement(payment_methods, "payment_method").text = "invoice"
-        if self.payerse_payment_method_einvoice:
-            # Untested because it's not supported by the test account
-            etree.SubElement(payment_methods, "payment_method").text = "einvoice"
-        if self.payerse_payment_method_wywallet:
-            etree.SubElement(payment_methods, "payment_method").text = "wywallet"
-        if self.payerse_payment_method_instalment:
-            etree.SubElement(payment_methods, "payment_method").text = "enter"
+        if self.payerse_payment_method_auto:
+            etree.SubElement(payment_methods, "payment_method").text = "auto"
+        else:
+            if self.payerse_payment_method_bank:
+                etree.SubElement(payment_methods, "payment_method").text = "bank"
+            if self.payerse_payment_method_card:
+                etree.SubElement(payment_methods, "payment_method").text = "card"
+            if self.payerse_payment_method_invoice:
+                etree.SubElement(payment_methods, "payment_method").text = "invoice"
+            if self.payerse_payment_method_einvoice:
+                # Untested because it's not supported by the test account
+                etree.SubElement(payment_methods, "payment_method").text = "einvoice"
+            if self.payerse_payment_method_wywallet:
+                etree.SubElement(payment_methods, "payment_method").text = "wywallet"
+            if self.payerse_payment_method_instalment:
+                etree.SubElement(payment_methods, "payment_method").text = "enter"
         
         if self.environment == "test":
             etree.SubElement(database_overrides, "test_mode").text = "true"
