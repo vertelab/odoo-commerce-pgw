@@ -72,7 +72,9 @@
         
         <record id="payment_acquirer_payerse_einvoice" model="payment.acquirer">
             <field name="name">Payer E-invoice</field>
+<!--
             <field name="website_icon">/payment_payerse/static/img/payer_installment.png</field>
+-->
             <field name="provider">payerse</field>
             <field name="company_id" ref="base.main_company"/>
             <field name="view_template_id" ref="payerse_acquirer_button"/>
@@ -89,7 +91,9 @@
         
         <record id="payment_acquirer_payerse_mobile" model="payment.acquirer">
             <field name="name">Payer Mobile</field>
+<!--
             <field name="website_icon">/payment_payerse/static/img/payer_installment.png</field>
+-->
             <field name="provider">payerse</field>
             <field name="company_id" ref="base.main_company"/>
             <field name="view_template_id" ref="payerse_acquirer_button"/>
@@ -106,7 +110,9 @@
         
         <record id="payment_acquirer_payerse_instalment" model="payment.acquirer">
             <field name="name">Payer Instalment Plan</field>
+<!--
             <field name="website_icon">/payment_payerse/static/img/payer_installment.png</field>
+-->
             <field name="provider">payerse</field>
             <field name="company_id" ref="base.main_company"/>
             <field name="view_template_id" ref="payerse_acquirer_button"/>

@@ -37,7 +37,6 @@ _logger = logging.getLogger(__name__)
 class AcquirerPayerSE(models.Model):
     _inherit = 'payment.acquirer'
     
-    website_icon = fields.Char(string='Icon location', help='Custom icon to use for this acquirer.')
     payerse_agent_id = fields.Char(string='Payer Agent ID',
         required_if_provider='payerse')
     payerse_key_1 = fields.Char(string='Payer Key 1',
@@ -80,8 +79,8 @@ class AcquirerPayerSE(models.Model):
         "94.140.57.180",
         "94.140.57.181",
         "94.140.57.184",
-        #REMOVE!
-        "127.0.0.1"
+        #DANGER: Only enable when testing locally.
+        #"127.0.0.1"
     ]
     
     def payerse_validate_ip(self, ip):

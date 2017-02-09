@@ -11,7 +11,6 @@
             <group attrs="{'invisible': [('provider', '!=', 'payerse')]}">
                 <group>
                     <group>
-                        <field name="website_icon"/>
                         <field name="payerse_agent_id"/>
                         <field name="payerse_key_1"/>
                         <field name="payerse_key_2"/>
@@ -48,13 +47,6 @@
         </xpath>
     </field>
 </record>
-
-<template id="payment" inherit_id="website_sale.payment">
-<!-- Enable custom icons in webshop -->
-    <xpath expr="//div[@id='payment_method']//img" position="attributes">
-        <attribute name="t-att-src">acquirer.website_icon or '/payment_%s/static/src/img/%s_icon.png' % (acquirer.provider, acquirer.provider)</attribute>
-    </xpath>
-</template>
 
 </data>
 </openerp>
