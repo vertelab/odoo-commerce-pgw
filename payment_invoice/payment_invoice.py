@@ -25,52 +25,10 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-class sale_order(models.Model):
-    _inherit = 'sale.order'
+class TransferPaymentTransaction(models.Model):
+    _inherit = 'payment.transaction'
     
-    @api.multi
-    def action_button_confirm(self):
-        super(sale_order, self).action_button_confirm()
-        _logger.warn('action_button_confirm\nstate: %s\ntx_id: %s\ntx_id.state: %s\naqcuirer_id.validation: %s\nactive_id: %s' % (self.state, self.payment_tx_id.id, self.payment_tx_id.state, self.payment_tx_id.acquirer_id.validation, self._context.get('active_id')))
-        if self.state in ['manual'] and self.payment_tx_id and\
-        self.payment_tx_id.state in ['done'] and\
-        self.payment_tx_id.acquirer_id.validation == 'automatic' and\
-        not self._context.get('active_id'):
-            _logger.warn('inside if statement')
-            new_context = dict(self._context)
-            new_context['active_id'] = self.id
-            new_context['open_invoices'] = True
-            wizard = self.env["sale.advance.payment.inv"].with_context(new_context).create({})
-            new_context['active_ids'] = [self.id]
-            res = wizard.with_context(new_context).create_invoices()
-            _logger.warn('res: %s' % res)
-            inv = self.env['account.invoice'].browse(res['res_id'])
-            inv.signal_workflow('invoice_open')
-            journal = self.env['account.journal'].browse(
-                int(self.env['ir.config_parameter'].get_param('payment_invoice.journal_id'))
-            )
-            
-            values = {
-                'journal_id': journal.id,
-                'account_id': journal.default_credit_account_id.id,
-                'partner_id': self.env['res.partner']._find_accounting_partner(inv.partner_id).id,
-                'amount': inv.type in ('out_refund', 'in_refund') and -inv.residual or inv.residual,
-                'reference': inv.name,
-                'type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment',
-            }
-            values_upd = self.env['account.voucher'].recompute_voucher_lines(values['partner_id'], values['journal_id'], values['amount'], inv.currency_id.id, values['type'], inv.date_invoice)['value']
-            if values_upd.get('line_cr_ids'):
-                values_upd['line_cr_ids'] = [(0, 0, values_upd['line_cr_ids'][0])]
-            del values_upd['line_dr_ids']
-            new_context = {
-                'close_after_process': True,
-                'invoice_type': inv.type,
-                'invoice_id': inv.id,
-                'type': inv.type in ('out_invoice','out_refund') and 'receipt' or 'payment',
-            }
-            values.update(values_upd)
-            _logger.warn(values)
-            voucher = self.env['account.voucher'].create(values)
-            
-            voucher.signal_workflow('proforma_voucher')
-        return True
+    @api.model
+    def _transfer_form_validate(self, tx, data):
+        _logger.info('Validated transfer payment for tx %s: set as done' % (tx.reference))
+        return tx.write({'state': 'done'})

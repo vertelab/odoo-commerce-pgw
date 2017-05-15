@@ -21,12 +21,12 @@
 {
 'name': 'Payment Invoice',
 'version': '0.1',
-'summary': 'Payment Acquirer: Create paid invoice on payment.',
+'summary': 'Payment Acquirer: Mark Transfer payments as done.',
 'category': 'Hidden',
 'description': """""",
 'author': 'Vertel AB',
 'website': 'http://www.vertel.se',
-'depends': ['payment', 'sale'],
+'depends': ['payment_transfer', 'sale'],
 'data': [],
 'installable': True,
 }

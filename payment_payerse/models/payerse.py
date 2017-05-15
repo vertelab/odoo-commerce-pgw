@@ -113,17 +113,17 @@ class AcquirerPayerSE(models.Model):
         
         #Generate buyer data
         buyer_details = etree.SubElement(root, "buyer_details")
-        etree.SubElement(buyer_details, "first_name").text = partner_values['first_name']
-        etree.SubElement(buyer_details, "last_name").text = partner_values['last_name']
-        etree.SubElement(buyer_details, "address_line_1").text = partner_values['address']
+        etree.SubElement(buyer_details, "first_name").text = partner_values['first_name'] or ''
+        etree.SubElement(buyer_details, "last_name").text = partner_values['last_name'] or ''
+        etree.SubElement(buyer_details, "address_line_1").text = partner_values['address'] or ''
         #etree.SubElement(buyer_details, "address_line_2")    #Necessary? Nope.
-        etree.SubElement(buyer_details, "postal_code").text = partner_values['zip']
-        etree.SubElement(buyer_details, "city").text = partner_values['city']
-        etree.SubElement(buyer_details, "country_code").text = partner_values['country'].code
-        etree.SubElement(buyer_details, "phone_home").text = partner_values['phone']
+        etree.SubElement(buyer_details, "postal_code").text = partner_values['zip'] or ''
+        etree.SubElement(buyer_details, "city").text = partner_values['city'] or ''
+        etree.SubElement(buyer_details, "country_code").text = partner_values['country'] and partner_values['country'].code or ''
+        etree.SubElement(buyer_details, "phone_home").text = partner_values['phone'] or ''
         #etree.SubElement(buyer_details, "phone_work").text = partner_values['phone']
         #etree.SubElement(buyer_details, "phone_mobile").text = partner_values['phone']
-        etree.SubElement(buyer_details, "email").text = partner_values['email']
+        etree.SubElement(buyer_details, "email").text = partner_values['email'] or ''
         #etree.SubElement(buyer_details, "organisation").text = partner_values['first_name']
         #etree.SubElement(buyer_details, "orgnr").text = partner_values['first_name']
         #~ if self.payerse_auth_only:
