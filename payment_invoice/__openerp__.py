@@ -21,12 +21,12 @@
 {
 'name': 'Payment Invoice',
 'version': '0.1',
-'summary': 'Payment Acquirer: Mark Transfer payments as done.',
+'summary': 'Payment Acquirer: Invoice payments.',
 'category': 'Hidden',
 'description': """""",
 'author': 'Vertel AB',
 'website': 'http://www.vertel.se',
-'depends': ['payment_transfer', 'sale'],
-'data': [],
+'depends': ['payment', 'sale'],
+'data': ['payment_invoice_view.xml','payment_invoice_data.xml',],
 'installable': True,
 }
