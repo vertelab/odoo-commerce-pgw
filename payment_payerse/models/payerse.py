@@ -226,8 +226,8 @@ class AcquirerPayerSE(models.Model):
                 else:
                     line_dict["description"] = '%d X %s' % (line.product_uom_qty, line.name)
                     line_dict['quantity'] = 1.0
-                line_dict['price_including_vat'] = (line.price_subtotal + tax) / line_dict['quantity']
-                line_dict['vat_percentage'] = tax * 100 / line.price_subtotal
+                line_dict['price_including_vat'] = ((line.price_subtotal + tax) / line_dict['quantity']) if line_dict['quantity'] else 0
+                line_dict['vat_percentage'] = (tax * 100 / line.price_subtotal) if line.price_subtotal else 0.0
                 total += line_dict['quantity'] * line_dict['price_including_vat']
                 payer_order_lines.append(line_dict)
                 i += 1
@@ -276,7 +276,7 @@ class AcquirerPayerSE(models.Model):
         else:
             percentage = self.fees_int_var
             fixed = self.fees_int_fixed
-        fees = (percentage / 100.0 * amount + fixed ) / (1 - percentage / 100.0)
+        fees = ((percentage / 100.0 * amount + fixed ) / (1 - percentage / 100.0)) if percentage != 100.0 else 0
         return fees
 
 
