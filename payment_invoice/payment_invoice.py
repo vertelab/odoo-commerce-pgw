@@ -32,6 +32,8 @@ _logger = logging.getLogger(__name__)
 class InvoicePaymentAcquirer(models.Model):
     _inherit = 'payment.acquirer'
     
+    invoice_mark_done = fields.Boolean(string='Mark Transactions as Done', help="Mark transactions as done when confirmed in the webshop. This will confirm the sale order.")
+    
     @api.model
     def _get_providers(self):
         providers = super(InvoicePaymentAcquirer, self)._get_providers()
@@ -103,8 +105,12 @@ class InvoicePaymentTransaction(models.Model):
 
     @api.model
     def _invoice_form_validate(self, tx, data):
-        _logger.info('Validated invoice payment for tx %s: set as done' % (tx.reference))
-        return tx.write({'state': 'done'})
+        if tx.acquirer_id.invoice_mark_done:
+            _logger.info('Validated invoice payment for tx %s: set as done' % (tx.reference))
+            return tx.write({'state': 'done'})
+        else:
+            _logger.info('Validated invoice payment for tx %s: set as pending' % (tx.reference))
+            return tx.write({'state': 'pending'})
 
 class InvoiceController(http.Controller):
     _accept_url = '/payment/invoice/feedback'

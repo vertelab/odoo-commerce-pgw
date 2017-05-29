@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
+    <data>
+        <record id="acquirer_form_invoice" model="ir.ui.view">
+            <field name="name">acquirer.form.invoice</field>
+            <field name="model">payment.acquirer</field>
+            <field name="inherit_id" ref="payment.acquirer_form"/>
+            <field name="arch" type="xml">
+                <xpath expr='//group[@name="acquirer_display"]' position='after'>
+                    <group attrs="{'invisible': [('provider', '!=', 'invoice')]}">
+                        <group>
+                            <group>
+                                <field name="invoice_mark_done"/>
+                            </group>
+                        </group>
+                    </group>
+                </xpath>
+            </field>
+        </record>
+    </data>
     <data noupdate="0">
 
         <template id="invoice_acquirer_button">
