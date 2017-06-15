@@ -19,18 +19,18 @@
 #
 ##############################################################################
 {
-        'name': 'Payson Payment Acquirer',
+        'name': 'PayEx Payment Acquirer',
         'version': '0.1',
-        'summary': 'Payment Acquirer: Payson Implementation',
+        'summary': 'Payment Acquirer: PayEx Implementation',
         'category': 'Hidden',
-        'description': """Payson Payment Acquirer""",
+        'description': """PayEx Payment Acquirer""",
         'author': 'Vertel AB',
         'website': 'http://www.vertel.se',
         'depends': ['payment'],
         'external_dependencies': {'python': ['payex',]},
-        'data': ['vpayson.xml',
+        'data': ['payex.xml',
                 'payment_acquirer.xml',
-                'payson_data.xml',
+                'payex_data.xml',
         ],
         'installable': True,
 }

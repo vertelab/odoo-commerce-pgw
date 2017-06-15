@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-    <data noupdate="0">
+    <data noupdate="1">
 
         <template id="payex_acquirer_button">
             <form t-att-action="tx_url" method="post" target="_self">
@@ -10,10 +10,7 @@
                 <!-- submit -->
                 <button type="submit" width="100px"
                     t-att-class="submit_class">
-<!--
-                    <t t-if="tx_values['payson_testmode'] == 'test'">TEST </t>
--->
-                    <img t-if="not submit_txt" src="/payment_payson/static/src/img/payson_icon.png"/>
+                    <img t-if="not submit_txt" src="/payment_payexn/static/src/img/PayEx_Logotype_Green_RGB_200x112.png"/>
                     <span t-if="submit_txt"><t t-esc="submit_txt"/> <span class="fa fa-long-arrow-right"/></span>
                 </button>
             </form>
