@@ -23,7 +23,8 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm, Warning, RedirectWarning
 from openerp import http
 from openerp.http import request
-import werkzeug
+#import werkzeug
+
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -57,11 +58,18 @@ class SumupController(http.Controller):
         _logger.warn("Error when contacting SumUp! Didn't get a response.\n%s" % response)
         return 'Error when contacting SumUp!'
         
-    @http.route('/payment/SumUp/initPayment', type='http', auth='public', method='POST')
+    @http.route('/payment/sumup/initPayment', type='http', auth='public', method='POST',website=True)
     def init_payment(self, **post):
         """
         Contact SumUp and redirect customer.
         """
+        _logger.warn('Sale trasactionm id %s' % request.session.get('sale_transaction_id', []))
+        tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
+        _logger.warn(tx)
+        _logger.warn(request.render('website.page_404', {}))
+        return request.render('payment_sumup.payment_form', {})
+        
+        
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
         if not tx:
             werkzeug.utils.redirect('/shop/payment', 302)
