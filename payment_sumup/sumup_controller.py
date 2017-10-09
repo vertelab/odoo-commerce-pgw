@@ -66,8 +66,7 @@ class SumupController(http.Controller):
         _logger.warn('Sale trasactionm id %s' % request.session.get('sale_transaction_id', []))
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
         _logger.warn(tx)
-        _logger.warn(request.render('website.page_404', {}))
-        return request.render('payment_sumup.payment_form', {})
+        return request.render('payment_sumup.payment_form', {'reference': tx})
         
         
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))

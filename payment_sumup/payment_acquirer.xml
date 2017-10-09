@@ -11,9 +11,11 @@
             <group attrs="{'invisible': [('provider', '!=', 'sumup')]}">
                 <group>
                     <group>
-                        <field name="sumup_account_nr"/>
+                        <field name="sumup_appid"/>
                         <field name="sumup_key"/>
+<!--
                         <field name="sumup_view"/>
+-->
                     </group>
                 </group>
             </group>

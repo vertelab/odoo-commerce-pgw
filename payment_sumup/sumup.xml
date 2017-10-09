@@ -2,13 +2,14 @@
 <openerp>
   <data noupdate="1">
     <template id="sumup_acquirer_button">
-      <form t-att-action="tx_url" method="post" target="_self">
+      <form t-att-action="tx_url" method="post" target="_blank">
         <input type="hidden" name="reference" t-att-value="tx_values['reference']" />
         <input type="hidden" name="name" t-att-value="partner_values['name']" />
         <input type="hidden" name="email" t-att-value="partner_values['email']" />
         <!-- submit -->
         <button type="submit" width="100px" t-att-class="submit_class">
           <img t-if="not submit_txt" src="/payment_sumup/static/src/img/sumup_icon.png" />
+          <img src="/payment_sumup/static/src/img/sumup_icon.png" />
           <span t-if="submit_txt">
             <t t-esc="submit_txt" />
             <span class="fa fa-long-arrow-right" />
@@ -17,46 +18,93 @@
       </form>
     </template>
     <template id="layout" name="SumUp page Layout">
-            <t t-call="web.layout">
-                <t t-set="head">
-                    <link href="/web/static/src/css/base.css" rel="stylesheet"/>
-<!--
-                    <link href="/web/static/lib/bootstrap/css/bootstrap.css" rel="stylesheet"/>
--->
-                </t>
-                <t t-set="body_classname" t-value="'oe_single_form'"/>
-                <div class="oe_single_form_container modal-content">
-                    <div class="oe_single_form_logo">
-                        <img t-attf-src="/web/binary/company_logo{{ '?dbname='+db if db else '' }}"/>
-                    </div>
-                    <hr/>
-                    <t t-raw="0"/>
-
-                    <div class="oe_single_form_footer" t-if="not disable_footer">
-                        <t t-if="not disable_database_manager">
-                            <a class="oe_login_manage_db" t-attf-href="/web/database/manager{{ '?debug' if debug else '' }}">Manage Databases</a>
-                            <span class="oe_footer_seperator"> | </span>
-                        </t>
-                        <a href="https://www.odoo.com" target="_blank">Powered by <span>Odoo</span></a>
-                    </div>
-                </div>
-            </t>
-        </template>
-    
-    
-    <template id="payment_form">
-      <t t-call="payment_sumup.layout">
-          <card></card>
-          <!-- the form js library-->
-          <script src="https://gateway.sumup.com/gateway/card.js"></script>
-          <script>//render the form ui providing a configuration object
-            PaymentCard.mount({checkoutId: "1234"});
-            //listen to checkout processing result and handle it
-            PaymentCard.on('checkout:paymentResult', function(data) {
-            //TODO: handle the checkout result
-               alert('Hello world')
-            })</script>
+      <t t-call="web.layout">
+        <t t-set="head">
+          <link href="/web/static/src/css/base.css" rel="stylesheet" />
+          <!--
+               <link href="/web/static/lib/bootstrap/css/bootstrap.css" rel="stylesheet"/>
+          -->
         </t>
+        <t t-set="body_classname" t-value="'oe_single_form'" />
+        <div class="oe_single_form_container modal-content">
+          <div class="oe_single_form_logo">
+            <img t-attf-src="/web/binary/company_logo{{ '?dbname='+db if db else '' }}" />
+          </div>
+          <hr />
+          <t t-raw="0" />
+          <div class="oe_single_form_footer" t-if="not disable_footer">
+            <t t-if="not disable_database_manager">
+              <a class="oe_login_manage_db" t-attf-href="/web/database/manager{{ '?debug' if debug else '' }}">Manage Databases</a>
+              <span class="oe_footer_seperator">|</span>
+            </t>
+            <a href="https://www.odoo.com" target="_blank">
+              Powered by
+              <span>Odoo</span>
+            </a>
+          </div>
+        </div>
+      </t>
+    </template>
+    <template id="payment_form">
+      <t t-call="website.layout">
+        <link rel="stylesheet" type="text/css" href="/payment_sumup/static/src/css/styles.css" />
+        <link rel="stylesheet" type="text/css" href="/payment_sumup/static/src/css/demo.css" />
+        <div class="creditCardForm">
+          <div class="heading">
+            <h1>Confirm Purchase</h1>
+          </div>
+          <div class="payment">
+            <form action="/payment/sumup/verify">
+              <div class="form-group owner">
+                <label for="owner">Owner</label>
+                <input type="text" class="form-control" id="owner" />
+              </div>
+              <div class="form-group CVV">
+                <label for="cvv">CVV</label>
+                <input type="text" class="form-control" id="cvv" />
+              </div>
+              <div class="form-group" id="card-number-field">
+                <label for="cardNumber">Card Number</label>
+                <input type="text" class="form-control" id="cardNumber" />
+              </div>
+              <div class="form-group" id="expiration-date">
+                <label>Expiration Date</label>
+                <select>
+                  <option value="01">January</option>
+                  <option value="02">February</option>
+                  <option value="03">March</option>
+                  <option value="04">April</option>
+                  <option value="05">May</option>
+                  <option value="06">June</option>
+                  <option value="07">July</option>
+                  <option value="08">August</option>
+                  <option value="09">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+                <select>
+                  <option value="17">2017</option>
+                  <option value="18">2018</option>
+                  <option value="19">2019</option>
+                  <option value="20">2020</option>
+                  <option value="21">2021</option>
+                </select>
+              </div>
+              <div class="form-group" id="credit_cards">
+                <img src="/payment_sumup/static/images/visa.jpg" id="visa" />
+                <img src="/payment_sumup/static/images/mastercard.jpg" id="mastercard" />
+                <img src="/payment_sumup/static/images/amex.jpg" id="amex" />
+              </div>
+              <div class="form-group" id="pay-now">
+                <button type="submit" class="btn btn-primary" id="confirm-purchase">Confirm</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <script src="/payment_sumup/static/src/js/jquery.payform.min.js" charset="utf-8" />
+        <script src="/payment_sumup/static/src//js/script.js" />
+      </t>
     </template>
   </data>
 </openerp>

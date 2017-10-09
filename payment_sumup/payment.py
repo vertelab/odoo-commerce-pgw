@@ -23,13 +23,15 @@ import logging
 _logger = logging.getLogger(__name__)
 
 from openerp import models, fields, api, _, tools
-
+import hashlib
 
 class AcquirerSumup(models.Model):
     _inherit = 'payment.acquirer'
     
-    sumup_account_nr = fields.Char('Merchant Account #', required_if_provider='sumup')
-    sumup_key = fields.Char('SumUp Key', required_if_provider='sumup')
+    def _sumup_appid(self):
+        self.sumup_appid = hashlib.sha224(self.env['ir.config_parameter'].get_param('database.uuid')).hexdigest()
+    sumup_appid = fields.Char('Application identifier', compute='_sumup_appid',required_if_provider='sumup',help="Register this application identifier with SumUp https://me.sumup.com/developers")
+    sumup_key = fields.Char('Key', required_if_provider='sumup',help="Record this key from https://me.sumup.com/developers when you have added the application identifier")
     sumup_view = fields.Selection(string='SumUp View', selection=[
         ('DIRECTDEBIT', 'DIRECTDEBIT'), #(Direct bank) – SALE
         ('IDEAL', 'IDEAL'), #(Direct bank) – SALE
