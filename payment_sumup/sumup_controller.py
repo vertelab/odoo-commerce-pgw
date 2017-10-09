@@ -34,29 +34,14 @@ class SumupController(http.Controller):
     @http.route(['/payment/sumup/verify'], type='http', auth='public', method='POST', website=True)
     def auth_payment(self, **post):
         """
-        Customer returns from Sumup. Look up status of order.
+        Check card information with SumUP, sends error to /payment/sumup/initPayment 
+        or update status on order
         """
         _logger.warn(post)
-        ref = post.get('orderRef', '')
+        ref = post.get('reference')
         if not ref:
             _logger.warn("Error in Sumup return. No reference found!")
-            return "Error when contacting SumUp!"
-        tx = request.env['payment.transaction'].sudo()._SumUp_form_get_tx_from_data(post)
-        if not tx:
-            _logger.warn("Error in SumUp return. No transaction found!")
-            return "Error when contacting SumUp!"
-        service = SumUp(
-            merchant_number=tx.acquirer_id.SumUp_account_nr,
-            encryption_key=tx.acquirer_id.SumUp_key,
-            production=tx.acquirer_id.environment == 'prod')
-        response = service.complete(orderRef=ref)
-        _logger.warn("SumUp response: %s" % response)
-        if response:
-            if request.env['payment.transaction'].sudo().with_context({'orderRef': ref}).form_feedback(response, 'SumUp'):
-                return werkzeug.utils.redirect('/shop/payment/validate', 302)
-            return "Couldn't verify your payment!"
-        _logger.warn("Error when contacting SumUp! Didn't get a response.\n%s" % response)
-        return 'Error when contacting SumUp!'
+            return request.render('payment_sumup.payment_form', {'reference': tx.reference,'error_message':_('No order reference found!') })
 
     @http.route(['/payment/sumup/initPayment'], type='http', auth='public', method='POST', website=True)
     def init_payment(self, **post):
