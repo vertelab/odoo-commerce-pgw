@@ -30,8 +30,8 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class SumupController(http.Controller):
-    
-    @http.route('/payment/sumup/verify', type='http', auth='public', method='GET')
+
+    @http.route(['/payment/sumup/verify'], type='http', auth='public', method='POST', website=True)
     def auth_payment(self, **post):
         """
         Customer returns from Sumup. Look up status of order.
@@ -57,8 +57,8 @@ class SumupController(http.Controller):
             return "Couldn't verify your payment!"
         _logger.warn("Error when contacting SumUp! Didn't get a response.\n%s" % response)
         return 'Error when contacting SumUp!'
-        
-    @http.route('/payment/sumup/initPayment', type='http', auth='public', method='POST',website=True)
+
+    @http.route(['/payment/sumup/initPayment'], type='http', auth='public', method='POST', website=True)
     def init_payment(self, **post):
         """
         Contact SumUp and redirect customer.
@@ -67,8 +67,8 @@ class SumupController(http.Controller):
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
         _logger.warn(tx)
         return request.render('payment_sumup.payment_form', {'reference': tx})
-        
-        
+
+
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
         if not tx:
             werkzeug.utils.redirect('/shop/payment', 302)
@@ -91,14 +91,14 @@ class SumupController(http.Controller):
             view = tx.acquirer_id.SumUp_view,
             cancelUrl = '%s/shop/payment' % request.env['ir.config_parameter'].sudo().get_param('web.base.url'),
         )
-        # code 	            String(128) 	Obsolete parameter, check errorCode.
-        # errorCode 	    String 	        Indicates the result of the request. Returns OK if request is successful.
-        # description 	    String(512) 	A literal description explaining the result. Returns OK if request is successful.
-        # paramName 	    String 	        Returns the name of the parameter that contains invalid data.
-        # thirdPartyError 	String 	        Returns the error code received from third party (not available for all payment methods).
-        # orderRef 	        String(32) 	    This parameter is only returned if the parameter is successful, and returns a 32bit, hexadecimal value (Guid) identifying the orderRef.Example: 8e96e163291c45f7bc3ee998d3a8939c
-        # sessionRef 	    String 	        Obsolete parameter.
-        # redirectUrl 	    String 	        Dynamic URL to send the end user to, when using redirect model.
+        # code              String(128)     Obsolete parameter, check errorCode.
+        # errorCode         String          Indicates the result of the request. Returns OK if request is successful.
+        # description       String(512)     A literal description explaining the result. Returns OK if request is successful.
+        # paramName         String          Returns the name of the parameter that contains invalid data.
+        # thirdPartyError   String          Returns the error code received from third party (not available for all payment methods).
+        # orderRef          String(32)      This parameter is only returned if the parameter is successful, and returns a 32bit, hexadecimal value (Guid) identifying the orderRef.Example: 8e96e163291c45f7bc3ee998d3a8939c
+        # sessionRef        String          Obsolete parameter.
+        # redirectUrl       String          Dynamic URL to send the end user to, when using redirect model.
         if response:
             _logger.warn(response)
             status = response.get('status')

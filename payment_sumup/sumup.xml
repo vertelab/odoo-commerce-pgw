@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-  <data noupdate="1">
+  <data>
     <template id="sumup_acquirer_button">
       <form t-att-action="tx_url" method="post" target="_blank">
         <input type="hidden" name="reference" t-att-value="tx_values['reference']" />
@@ -47,29 +47,27 @@
     </template>
     <template id="payment_form">
       <t t-call="website.layout">
-        <link rel="stylesheet" type="text/css" href="/payment_sumup/static/src/css/styles.css" />
-        <link rel="stylesheet" type="text/css" href="/payment_sumup/static/src/css/demo.css" />
         <div class="creditCardForm">
           <div class="heading">
             <h1>Confirm Purchase</h1>
           </div>
           <div class="payment">
-            <form action="/payment/sumup/verify">
+            <form action="/payment/sumup/verify" method="post">
               <div class="form-group owner">
                 <label for="owner">Owner</label>
-                <input type="text" class="form-control" id="owner" />
+                <input type="text" class="form-control" id="owner" name="owner" />
               </div>
               <div class="form-group CVV">
                 <label for="cvv">CVV</label>
-                <input type="text" class="form-control" id="cvv" />
+                <input type="text" class="form-control" id="cvv" name="cvv" />
               </div>
               <div class="form-group" id="card-number-field">
                 <label for="cardNumber">Card Number</label>
-                <input type="text" class="form-control" id="cardNumber" />
+                <input type="text" class="form-control" id="cardNumber" name="cardNumber" />
               </div>
               <div class="form-group" id="expiration-date">
                 <label>Expiration Date</label>
-                <select>
+                <select name="month">
                   <option value="01">January</option>
                   <option value="02">February</option>
                   <option value="03">March</option>
@@ -83,7 +81,7 @@
                   <option value="11">November</option>
                   <option value="12">December</option>
                 </select>
-                <select>
+                <select name="year">
                   <option value="17">2017</option>
                   <option value="18">2018</option>
                   <option value="19">2019</option>
@@ -99,12 +97,19 @@
               <div class="form-group" id="pay-now">
                 <button type="submit" class="btn btn-primary" id="confirm-purchase">Confirm</button>
               </div>
+              <input name="reference" type="hidden" t-att-value="reference"/>
+              <p id="msg_warning" class="text-danger"><t t-esc="msg_warning"/></p>
             </form>
           </div>
         </div>
-        <script src="/payment_sumup/static/src/js/jquery.payform.min.js" charset="utf-8" />
-        <script src="/payment_sumup/static/src//js/script.js" />
       </t>
+    </template>
+    <template id="assets_frontend" inherit_id="website.assets_frontend">
+        <xpath expr="." position="inside">
+            <link rel="stylesheet" type="text/css" href="/payment_sumup/static/src/css/styles.css" />
+            <script type="text/javascript" src="/payment_sumup/static/src/js/jquery.payform.min.js" charset="utf-8" />
+            <script type="text/javascript" src="/payment_sumup/static/src//js/script.js" />
+        </xpath>
     </template>
   </data>
 </openerp>
