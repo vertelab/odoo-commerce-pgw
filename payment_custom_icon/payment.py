@@ -27,6 +27,5 @@ _logger = logging.getLogger(__name__)
 
 class Acquirer(models.Model):
     _inherit = 'payment.acquirer'
-    
-    website_icon = fields.Char(string='Icon location', help='Custom icon to use for this acquirer.')
-    
+
+    website_icon = fields.Binary(string='Icon location', help='Custom icon to use for this acquirer.')
