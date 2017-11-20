@@ -34,11 +34,6 @@ class Acquirer(models.Model):
     def get_payment_terms(self, acquirers, user):
         alist = []
         for acquirer in acquirers:
-            if user.partner_id.is_company:
-                if user.partner_id.property_payment_term in acquirer.payment_term_ids:
-                    alist.append(acquirer)
-            else:
-                if user.partner_id.parent_id:
-                    if user.partner_id.parent_id.property_payment_term in acquirer.payment_term_ids:
-                        alist.append(acquirer)
+            if not acquirer.payment_term_ids or (user.partner_id.commercial_partner_id.property_payment_term in acquirer.payment_term_ids):
+                alist.append(acquirer)
         return alist
