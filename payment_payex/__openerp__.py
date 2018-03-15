@@ -25,6 +25,7 @@
         'category': 'Hidden',
         'description': """PayEx Payment Acquirer""",
         'author': 'Vertel AB',
+    'license': 'AGPL-3',
         'website': 'http://www.vertel.se',
         'depends': ['payment'],
         'external_dependencies': {'python': ['payex',]},
