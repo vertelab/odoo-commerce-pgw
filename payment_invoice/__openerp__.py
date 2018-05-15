@@ -25,6 +25,7 @@
 'category': 'Hidden',
 'description': """""",
 'author': 'Vertel AB',
+    'license': 'AGPL-3',
 'website': 'http://www.vertel.se',
 'depends': ['payment', 'sale'],
 'data': ['payment_invoice_view.xml','payment_invoice_data.xml',],

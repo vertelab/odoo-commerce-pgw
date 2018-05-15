@@ -25,6 +25,7 @@
 'category': 'Hidden',
 'description': """Payer.se Payment Acquirer""",
 'author': 'Vertel AB',
+    'license': 'AGPL-3',
 'website': 'http://www.vertel.se',
 'depends': ['payment'],
 'data': ['views/payerse.xml',
