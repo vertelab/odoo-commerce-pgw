@@ -20,7 +20,7 @@
 ##############################################################################
 
 from openerp import models, fields, api, _, tools, http
-from openerp.exceptions import except_orm, Warning, RedirectWarning
+from openerp.exceptions import except_orm, Warning, RedirectWarning, ValidationError
 from openerp.http import request
 from openerp.tools.float_utils import float_compare
 import pprint
@@ -117,6 +117,7 @@ class InvoiceController(http.Controller):
 
     @http.route(['/payment/invoice/feedback'], type='http', auth='none')
     def invoice_form_feedback(self, **post):
+        _logger.warn('Here We asarer')
         _logger.info('Beginning form_feedback with post data %s', pprint.pformat(post))  # debug
         request.env['payment.transaction'].sudo().form_feedback(post, 'invoice')
         return werkzeug.utils.redirect(post.pop('return_url', '/'))
