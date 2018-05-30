@@ -33,7 +33,7 @@ class Acquirer(models.Model):
     @api.model
     def get_payment_terms(self, acquirers, user):
         alist = []
-        for acquirer in acquirers:
+        for acquirer in acquirers or []:
             if not acquirer.payment_term_ids or (user.partner_id.commercial_partner_id.property_payment_term in acquirer.payment_term_ids):
                 alist.append(acquirer)
         return alist
