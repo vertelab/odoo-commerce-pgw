@@ -30,46 +30,46 @@ import sys, traceback
 import logging
 _logger = logging.getLogger(__name__)
 
-def test_klarna_get(url_append, url_data):
-    url = klarna_url + url_append % url_data
-    print url
-    response = requests.get(
-        url,
-        json={},
-        auth=HTTPBasicAuth(klarna_uid, klarna_passwd))
-    print response
-    print response.json()
-    return response
+# ~ def test_klarna_get(url_append, url_data):
+    # ~ url = klarna_url + url_append % url_data
+    # ~ print url
+    # ~ response = requests.get(
+        # ~ url,
+        # ~ json={},
+        # ~ auth=HTTPBasicAuth(klarna_uid, klarna_passwd))
+    # ~ print response
+    # ~ print response.json()
+    # ~ return response
 
-klarna_values = {
-    'purchase_country': 'SE',
-    'purchase_currency': 'SEK',
-    'locale': 'sv-SE',
-    'order_amount': 10000,
-    'order_tax_amount': 2000,
-    'order_lines': [
-        {
-            'name': 'Foobar Enhancer 3000',
-            'quantity': 1,
-            'unit_price': 10000,
-            'tax_rate': 2500,
-            'total_amount': 10000,
-            'total_tax_amount': 2000,
-        }
-    ],
-    'merchant_urls': {
-        'terms': 'https://robin.vertel.se/klarna/terms',
-        'cancellation_terms': 'https://robin.vertel.se/klarna/cancellation_terms',
-        'checkout': 'https://robin.vertel.se/klarna/checkout',
-        'confirmation': 'https://robin.vertel.se/klarna/confirmation',
-        'push': 'https://robin.vertel.se/klarna/push',
-        'validation': 'https://robin.vertel.se/klarna/validation',
-        'shipping_option_update': 'https://robin.vertel.se/klarna/shipping_option_update',
-        'address_update': 'https://robin.vertel.se/klarna/address_update',
-        'notification': 'https://robin.vertel.se/klarna/notification',
-        'country_change': 'https://robin.vertel.se/klarna/country_change',
-    },
-}
+# ~ klarna_values = {
+    # ~ 'purchase_country': 'SE',
+    # ~ 'purchase_currency': 'SEK',
+    # ~ 'locale': 'sv-SE',
+    # ~ 'order_amount': 10000,
+    # ~ 'order_tax_amount': 2000,
+    # ~ 'order_lines': [
+        # ~ {
+            # ~ 'name': 'Foobar Enhancer 3000',
+            # ~ 'quantity': 1,
+            # ~ 'unit_price': 10000,
+            # ~ 'tax_rate': 2500,
+            # ~ 'total_amount': 10000,
+            # ~ 'total_tax_amount': 2000,
+        # ~ }
+    # ~ ],
+    # ~ 'merchant_urls': {
+        # ~ 'terms': 'https://robin.vertel.se/klarna/terms',
+        # ~ 'cancellation_terms': 'https://robin.vertel.se/klarna/cancellation_terms',
+        # ~ 'checkout': 'https://robin.vertel.se/klarna/checkout',
+        # ~ 'confirmation': 'https://robin.vertel.se/klarna/confirmation',
+        # ~ 'push': 'https://robin.vertel.se/klarna/push',
+        # ~ 'validation': 'https://robin.vertel.se/klarna/validation',
+        # ~ 'shipping_option_update': 'https://robin.vertel.se/klarna/shipping_option_update',
+        # ~ 'address_update': 'https://robin.vertel.se/klarna/address_update',
+        # ~ 'notification': 'https://robin.vertel.se/klarna/notification',
+        # ~ 'country_change': 'https://robin.vertel.se/klarna/country_change',
+    # ~ },
+# ~ }
 # CHECKOUT
 # skicka in klarna_values via POST till /checkout/v3/orders
 # rendera response.json()['html_snippet'] för kunden

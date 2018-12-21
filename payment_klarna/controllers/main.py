@@ -55,49 +55,51 @@ class KlarnaController(http.Controller):
         """
         Foo.
         """
-        _logger.warn('\n\ncheckout_test\n%s' % pprint.pformat(post))
-        order_id = str(uuid.uuid4())
-        klarna_values = {
-            'order_id': order_id,
-            'purchase_country': 'SE',
-            'purchase_currency': 'SEK',
-            'locale': 'sv-SE',
-            'order_amount': 10000,
-            'order_tax_amount': 2000,
-            'order_lines': [
-                {
-                    'name': 'Foobar Enhancer 3000',
-                    'quantity': 1,
-                    'unit_price': 10000,
-                    'tax_rate': 2500,
-                    'total_amount': 10000,
-                    'total_tax_amount': 2000,
-                }
-            ],
-            'merchant_urls': {
-                'terms': 'https://robin.vertel.se/klarna/terms',
-                'cancellation_terms': 'https://robin.vertel.se/klarna/cancellation_terms',
-                'checkout': 'https://robin.vertel.se/klarna/checkout',
-                'confirmation': 'https://robin.vertel.se/klarna/confirmation/%s' % order_id,
-                'push': 'https://robin.vertel.se/klarna/push',
-                'validation': 'https://robin.vertel.se/klarna/validation',
-                'shipping_option_update': 'https://robin.vertel.se/klarna/shipping_option_update',
-                'address_update': 'https://robin.vertel.se/klarna/address_update',
-                'notification': 'https://robin.vertel.se/klarna/notification',
-                'country_change': 'https://robin.vertel.se/klarna/country_change',
-            },
-        }
-        acquirer = request.env['payment.acquirer'].search([('provider', '=', 'klarna')])
-        return acquirer.klarna_initiate_checkout(klarna_values)
+        # ~ _logger.warn('\n\ncheckout_test\n%s' % pprint.pformat(post))
+        # ~ order_id = str(uuid.uuid4())
+        # ~ klarna_values = {
+            # ~ 'order_id': order_id,
+            # ~ 'purchase_country': 'SE',
+            # ~ 'purchase_currency': 'SEK',
+            # ~ 'locale': 'sv-SE',
+            # ~ 'order_amount': 10000,
+            # ~ 'order_tax_amount': 2000,
+            # ~ 'order_lines': [
+                # ~ {
+                    # ~ 'name': 'Foobar Enhancer 3000',
+                    # ~ 'quantity': 1,
+                    # ~ 'unit_price': 10000,
+                    # ~ 'tax_rate': 2500,
+                    # ~ 'total_amount': 10000,
+                    # ~ 'total_tax_amount': 2000,
+                # ~ }
+            # ~ ],
+            # ~ 'merchant_urls': {
+                # ~ 'terms': 'https://robin.vertel.se/klarna/terms',
+                # ~ 'cancellation_terms': 'https://robin.vertel.se/klarna/cancellation_terms',
+                # ~ 'checkout': 'https://robin.vertel.se/klarna/checkout',
+                # ~ 'confirmation': 'https://robin.vertel.se/klarna/confirmation/%s' % order_id,
+                # ~ 'push': 'https://robin.vertel.se/klarna/push',
+                # ~ 'validation': 'https://robin.vertel.se/klarna/validation',
+                # ~ 'shipping_option_update': 'https://robin.vertel.se/klarna/shipping_option_update',
+                # ~ 'address_update': 'https://robin.vertel.se/klarna/address_update',
+                # ~ 'notification': 'https://robin.vertel.se/klarna/notification',
+                # ~ 'country_change': 'https://robin.vertel.se/klarna/country_change',
+            # ~ },
+        # ~ }
+        # ~ acquirer = request.env['payment.acquirer'].search([('provider', '=', 'klarna')])
+        # ~ return acquirer.klarna_initiate_checkout(klarna_values)
+        return ''
     
     @http.route('/klarna/confirmation/<string:order_id>', type='http', auth='public')
     def confirmation_test(self, order_id, **post):
         """
         Foo.
         """
-        _logger.warn('\n\nconfirmation_test\n%s' % pprint.pformat(post))
-        acquirer = request.env['payment.acquirer'].search([('provider', '=', 'klarna')])
-        return acquirer.klarna_get_order(order_id)
+        # ~ _logger.warn('\n\nconfirmation_test\n%s' % pprint.pformat(post))
+        # ~ acquirer = request.env['payment.acquirer'].search([('provider', '=', 'klarna')])
+        # ~ return acquirer.klarna_get_order(order_id)
+        return ''
     
     @http.route('/klarna/push', type='http', auth='public')
     def push_test(self, **post):
