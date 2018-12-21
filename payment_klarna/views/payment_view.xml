@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    
+    <record id="acquirer_form_klarna" model="ir.ui.view">
+        <field name="name">acquirer.form.klarna</field>
+        <field name="model">payment.acquirer</field>
+        <field name="inherit_id" ref="payment.acquirer_form"/>
+        <field name="arch" type="xml">
+            <xpath expr='//group[@name="acquirer"]' position='after'>
+                <group attrs="{'invisible': [('provider', '!=', 'klarna')]}">
+                    <field name="klarna_uid"/>
+                    <field name="klarna_password"/>
+                    <field name="klarna_eid"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+<!--
+    <record id="transaction_form_klarna" model="ir.ui.view">
+        <field name="name">acquirer.transaction.form.klarna</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.transaction_form"/>
+        <field name="arch" type="xml">
+            <xpath expr='//notebook' position='inside'>
+                <page string="Klarna TX Details">
+                    <group>
+                        
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+-->
+    
+</data>
+</odoo>
