@@ -40,12 +40,13 @@ class PaymentTransaction(models.Model):
         #~ _logger.warn(msg)
         order = self.env['sale.order'].browse(values.get('sale_order_id'))
         acquirer_id = values.get('acquirer_id')
-        if order and acquirer_id:
+        if order and acquirer_id :
             acquirer = self.env['payment.acquirer'].search_read([('id', '=', acquirer_id)], ['invoice_type_id'])
             if acquirer:
                 invoice_type_id = acquirer[0]['invoice_type_id'] and acquirer[0]['invoice_type_id'][0] or None
                 _logger.warn(type(invoice_type_id))
-                order.write({'invoice_type_id': invoice_type_id})
+                if invoice_type_id:
+                    order.write({'invoice_type_id': invoice_type_id})
         return super(PaymentTransaction, self).create(values)
     
     @api.multi
@@ -59,5 +60,6 @@ class PaymentTransaction(models.Model):
             if acquirer:
                 invoice_type_id = acquirer[0]['invoice_type_id']
                 for record in self:
-                    record.sale_order_id.write({'invoice_type_id': invoice_type_id})
+                    if invoice_type_id:
+                        record.sale_order_id.write({'invoice_type_id': invoice_type_id})
         return super(PaymentTransaction, self).write(values)
