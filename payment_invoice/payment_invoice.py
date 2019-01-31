@@ -31,19 +31,19 @@ _logger = logging.getLogger(__name__)
 
 class InvoicePaymentAcquirer(models.Model):
     _inherit = 'payment.acquirer'
-    
+
     invoice_mark_done = fields.Boolean(string='Mark Transactions as Done', help="Mark transactions as done when confirmed in the webshop. This will confirm the sale order.")
-    
+
     @api.model
     def _get_providers(self):
         providers = super(InvoicePaymentAcquirer, self)._get_providers()
         providers.append(['invoice', _('Invoice')])
         return providers
-    
+
     @api.multi
     def invoice_get_form_action_url(self):
         return '/payment/invoice/feedback'
-    
+
     @api.model
     def _format_invoice_data(self):
         banks = self.env.user.company_id.bank_ids.filtered('footer')
@@ -62,7 +62,7 @@ class InvoicePaymentAcquirer(models.Model):
             'bank_accounts': bank_accounts,
         }
         return post_msg
-    
+
     @api.model
     @api.returns('self', lambda value: value.id)
     def create(self, values):
@@ -76,7 +76,7 @@ class InvoicePaymentAcquirer(models.Model):
 
 class InvoicePaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
-    
+
     @api.model
     def _invoice_form_get_tx_from_data(self, data):
         reference, amount, currency_name = data.get('reference'), data.get('amount'), data.get('currency_name')
@@ -91,7 +91,7 @@ class InvoicePaymentTransaction(models.Model):
             _logger.error(error_msg)
             raise ValidationError(error_msg)
         return tx
-    
+
     @api.model
     def _invoice_form_get_invalid_parameters(self, tx, data):
         invalid_parameters = []
