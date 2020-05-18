@@ -2,6 +2,7 @@
 <openerp>
     <data noupdate="0">
 
+<!--
         <record id="payment_acquirer_invoice" model="payment.acquirer">
             <field name="name">Invoice</field>
             <field name="provider">invoice</field>
@@ -13,6 +14,30 @@
             <field name="pre_msg"><![CDATA[
 <p>Invoice information will be provided after choosing the payment mode.</p>]]>
             </field>
+        </record>
+-->
+<!--
+
+        <record id="payment.payment_acquirer_invoice" model="payment.acquirer">
+            <field name="name">Invoice</field>
+            <field name="image" type="base64" file="payment_transfer/static/src/img/transfer_icon.png"/>
+            <field name="provider">invoice</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="view_template_id" ref="invoice_acquirer_button"/>
+            <field name="auto_confirm">none</field>
+            <field name="environment">test</field>
+            <field name="website_published" eval="True"/>
+            <field name="pre_msg"><![CDATA[
+<p>Invoice information will be provided after choosing the payment mode.</p>]]>
+            </field>
+        </record>
+-->
+
+        <record id="payment.payment_acquirer_invoice" model="payment.acquirer">
+            <field name="name">Invoice</field>
+            <field name="view_template_id" ref="invoice_acquirer_button"/>
+            <field name="provider">transfer</field>
+            <field name="company_id" ref="base.main_company"/>
         </record>
 
     </data>

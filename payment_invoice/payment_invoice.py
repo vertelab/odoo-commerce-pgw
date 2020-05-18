@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    OpenERP, Open Source Management Solution, third party addon
-#    Copyright (C) 2004-2015 Vertel AB (<http://vertel.se>).
+#    Copyright (C) 2004- Vertel AB (<http://vertel.se>).
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -19,10 +19,10 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _, tools, http
-from openerp.exceptions import except_orm, Warning, RedirectWarning, ValidationError
-from openerp.http import request
-from openerp.tools.float_utils import float_compare
+from odoo import models, fields, api, _, tools, http
+from odoo.exceptions import except_orm, Warning, RedirectWarning, ValidationError
+from odoo.http import request
+from odoo.tools.float_utils import float_compare
 import pprint
 import werkzeug
 import logging
