@@ -31,9 +31,9 @@ except:
 class AcquirerPayex(models.Model):
     _inherit = 'payment.acquirer'
     
-    payex_account_nr = fields.Char('Merchant Account #', required_if_provider='payex')
-    payex_key = fields.Char('PayEx Key', required_if_provider='payex')
-    payex_view = fields.Selection(string='PayEx View', selection=[
+    swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='payex')
+    swedbankpay_key = fields.Char('SwedbankPay Key', required_if_provider='payex')
+    swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[
         ('DIRECTDEBIT', 'DIRECTDEBIT'), #(Direct bank) – SALE
         ('IDEAL', 'IDEAL'), #(Direct bank) – SALE
         ('CPA', 'CPA'), #(Norwegian and Swedish overcharged SMS) – SALE

@@ -20,11 +20,11 @@
 # ~ 'external_dependencies': {'python': ['swedbankpay']},
 ##############################################################################
 {
-        'name': 'Swedbank Pay Payment Acquirer',
+        'name': 'SwedbankPay Payment Acquirer',
         'version': '8.0.0.1',
         'summary': 'Payment Acquirer: Swedbank Pay Implementation',
         'category': 'Hidden',
-        'description': """2020-06-20 // Swedbank Pay Payment Acquirer.""",
+        'description': """SwedbankPay Payment Acquirer.""",
         'author': 'Vertel AB',
     'license': 'AGPL-3',
         'website': 'http://www.vertel.se',

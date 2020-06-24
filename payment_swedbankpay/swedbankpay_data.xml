@@ -2,8 +2,8 @@
 <openerp>
     <data noupdate="1">
         <record id="payment_acquirer_payex" model="payment.acquirer">
-            <field name="name">PayEx</field>
-            <field name="provider">payex</field>
+            <field name="name">Swedbank Pay</field>
+            <field name="provider">swedbankpay</field>
             <field name="company_id" ref="base.main_company"/>
             <field name="view_template_id" ref="payex_acquirer_button"/>
             <field name="environment">test</field>

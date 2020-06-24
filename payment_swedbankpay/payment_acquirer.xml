@@ -25,7 +25,7 @@
             <field name="inherit_id" ref="payment.transaction_form" />
             <field name="arch" type="xml">
                 <xpath expr='//notebook' position='inside'>
-                    <page string="PayEx TX Details">
+                    <page string="SwedbankPay TX Details">
                         <group />
                     </page>
                 </xpath>
