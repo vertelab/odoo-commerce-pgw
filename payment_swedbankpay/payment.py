@@ -66,12 +66,12 @@ Valid view types – And valid purchaseOperation for those views:
 * FINANCING – AUTHORIZATION/SALE
 * CREDITACCOUNT – AUTHORIZATION/SALE
 * PREMIUMSMS – SALE
-* SWISH – SALE""", required_if_provider='payex')
+* SWISH – SALE""", required_if_provider='swedbankpay')
     
     def _get_providers(self, cr, uid, context=None):
         providers = super(AcquirerPayex, self)._get_providers(cr, uid,
             context=context)
-        providers.append(['payex', 'PayEx'])
+        providers.append(['swedbankpay', 'Swedbank Pay'])
         return providers
     
     @api.multi

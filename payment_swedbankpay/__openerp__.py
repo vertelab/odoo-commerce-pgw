@@ -32,6 +32,7 @@
         'data': ['swedbankpay.xml',
                 'payment_acquirer.xml',
                 'swedbankpay_data.xml',
+                'res_cnfig_view.xml',
         ],
         'installable': True,
 }

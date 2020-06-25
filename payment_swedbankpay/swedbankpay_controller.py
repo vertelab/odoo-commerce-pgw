@@ -97,7 +97,7 @@ class PayexController(http.Controller):
         # sessionRef 	    String 	        Obsolete parameter.
         # redirectUrl 	    String 	        Dynamic URL to send the end user to, when using redirect model.
         if response:
-            _logger.warn(response)
+            _logger.warn("kalas %s" % response)
             status = response.get('status')
             if not status:
                 _logger.warn("Error when contacting Swedbank Pay! Didn't get a status.\n%s" % response)
