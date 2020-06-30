@@ -67,6 +67,7 @@ class PayexController(http.Controller):
         Contact PayEx and redirect customer.
         """
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
+        _logger.warn("Hello world!!! TX %s" % tx )
         if not tx:
             werkzeug.utils.redirect('/shop/payment', 302)
         service = PayEx(
@@ -97,7 +98,8 @@ class PayexController(http.Controller):
         # sessionRef 	    String 	        Obsolete parameter.
         # redirectUrl 	    String 	        Dynamic URL to send the end user to, when using redirect model.
         if response:
-            _logger.warn(response)
+            # ~ _logger.warn(response)
+            _logger.warn("kalas %s" % response)
             status = response.get('status')
             if not status:
                 _logger.warn("Error when contacting PayEx! Didn't get a status.\n%s" % response)

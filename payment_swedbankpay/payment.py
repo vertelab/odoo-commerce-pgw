@@ -31,6 +31,7 @@ except:
 class AcquirerPayex(models.Model):
     _inherit = 'payment.acquirer'
     
+    swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='payex')
     swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='payex')
     swedbankpay_key = fields.Char('SwedbankPay Key', required_if_provider='payex')
     swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[
@@ -75,18 +76,18 @@ Valid view types – And valid purchaseOperation for those views:
         return providers
     
     @api.multi
-    def payex_form_generate_values(self, partner_values, tx_values):
+    def swedbankpay_form_generate_values(self, partner_values, tx_values):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
         return partner_values, tx_values
     
     @api.multi
-    def payex_get_form_action_url(self):
+    def swedbankpay_get_form_action_url(self):
         """Returns the url of the button form."""
-        return '/payment/payex/initPayment'
+        return '/payment/swedbankpay/initPayment'
     
     @api.multi
-    def payex_compute_fees(self, amount, currency_id, country_id):
+    def swedbankpay_compute_fees(self, amount, currency_id, country_id):
         """TODO: Compute fees."""
         self.ensure_one()
         if not self.fees_active:
