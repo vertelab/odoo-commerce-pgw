@@ -26,7 +26,7 @@
         'category': 'Hidden',
         'description': """SwedbankPay Payment Acquirer.""",
         'author': 'Vertel AB',
-    'license': 'AGPL-3',
+        'license': 'AGPL-3',
         'website': 'http://www.vertel.se',
         'depends': ['payment'],
         'data': ['swedbankpay.xml',

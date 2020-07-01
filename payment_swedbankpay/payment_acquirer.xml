@@ -11,7 +11,6 @@
                         <group>
                             <field name="swedbankpay_merchant_id" />
                             <field name="swedbankpay_account_nr" />
-                            <field name="swedbankpay_key" />
                             <field name="swedbankpay_view" />
                         </group>
                     </group>
