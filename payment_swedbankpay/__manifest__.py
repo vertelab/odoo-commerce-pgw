@@ -21,7 +21,7 @@
 ##############################################################################
 {
         'name': 'SwedbankPay Payment Acquirer',
-        'version': '12.0.0.1',
+        'version': '13.0.0.1',
         'summary': 'Payment Acquirer: Swedbank Pay Implementation',
         'category': 'Hidden',
         'description': """SwedbankPay Payment Acquirer.""",
