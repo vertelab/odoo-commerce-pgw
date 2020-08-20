@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="acquirer_form_paytm" model="ir.ui.view">
+            <field name="name">acquirer.form.paytm</field>
+            <field name="model">payment.acquirer</field>
+            <field name="inherit_id" ref="payment.acquirer_form"/>
+            <field name="arch" type="xml">
+                <xpath expr='//group[@name="acquirer"]' position='after'>
+                    <group attrs="{'invisible': [('provider', '!=', 'paytm_payment')]}">
+                        <field name="paytm_mid" />
+                        <field name="paytm_key" />
+                         <field name="paytm_website" />
+                        <field name="paytm_channel" />
+                        <field name="paytm_industry" />
+                         <a colspan="2" href="https://paytm.com/" target="_blank">How to configure your Paytm account?</a>
+                        
+                    </group>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</openerp>

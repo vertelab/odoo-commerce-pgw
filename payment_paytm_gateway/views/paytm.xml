@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+	<data>
+
+		<template id="paytm_payment_acquirer_button">
+			<form t-if="acquirer.paytm_mid" t-att-action="tx_url"
+				method="post" target="_self">
+				<input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+				<input type='hidden' name='MID' t-att-value="MID" />
+				<input type='hidden' name='ORDER_ID' t-att-value="ORDER_ID" />
+				<input type='hidden' name='CUST_ID' t-att-value="CUST_ID" />
+				<input type='hidden' name='TXN_AMOUNT' t-att-value="TXN_AMOUNT" />
+				<input type='hidden' name='CHANNEL_ID' t-att-value="CHANNEL_ID" />
+				<input type='hidden' name='INDUSTRY_TYPE_ID' t-att-value="INDUSTRY_TYPE_ID" />
+				<input type='hidden' name='WEBSITE' t-att-value="WEBSITE" />
+				<input type='hidden' name='MOBILE_NO' t-att-value="MOBILE_NO" />
+				<input type='hidden' name='EMAIL' t-att-value="EMAIL" />
+				<input type='hidden' name='CHECKSUMHASH' t-att-value="CHECKSUMHASH" />
+				
+                <input type='hidden' name='CITY' t-att-value="CITY" />
+                <input type='hidden' name='STATE' t-att-value="STATE" />
+                <input type='hidden' name='PINCODE' t-att-value="PINCODE" />
+                
+				<button type="submit" width="100px" t-att-class="submit_class">
+					<img t-if="not submit_txt" src="payment_paytm_gateway/static/description/icon.png" />
+					<span t-if="submit_txt">
+						<t t-esc="submit_txt" />
+						<span class="fa fa-long-arrow-right" />
+					</span>
+				</button>
+			</form>
+		</template>
+
+	</data>
+</openerp>

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# OpenERP, Open Source Management Solution, third party addon
-# Copyright (C) 2004-2015 Vertel AB (<http://vertel.se>).
+# Odoo, Open Source Management Solution, third party addon
+# Copyright (C) 2020- Vertel AB (<http://vertel.se>).
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@
 ##############################################################################
 {
         'name': 'SwedbankPay Payment Acquirer',
-        'version': '12.0.0.1',
+        'version': '13.0.0.1',
         'summary': 'Payment Acquirer: Swedbank Pay Implementation',
         'category': 'Hidden',
         'description': """SwedbankPay Payment Acquirer.""",
@@ -36,3 +36,5 @@
         ],
         'installable': True,
 }
+
+# vim:expandtab:smartindent:tabstop=4s:softtabstop=4:shiftwidth=4:
