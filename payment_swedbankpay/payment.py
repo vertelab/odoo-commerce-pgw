@@ -26,7 +26,8 @@ _logger = logging.getLogger(__name__)
 
 class AcquirerPayex(models.Model):
     _inherit = 'payment.acquirer'
-    
+
+    provider = fields.Selection(selection_add=[('swedbankpay', 'Swedbank Pay')])
     swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='payex')
     swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='payex')
     swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[
@@ -63,12 +64,6 @@ Valid view types – And valid purchaseOperation for those views:
 * CREDITACCOUNT – AUTHORIZATION/SALE
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
-    
-    def _get_providers(self, cr, uid, context=None):
-        providers = super(AcquirerPayex, self)._get_providers(cr, uid,
-            context=context)
-        providers.append(['swedbankpay', 'Swedbank Pay'])
-        return providers
     
     @api.multi
     def swedbankpay_form_generate_values(self, partner_values, tx_values):
