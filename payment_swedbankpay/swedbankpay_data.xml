@@ -1,16 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="payment_acquirer_swedbankpay" model="payment.acquirer">
-        <field name="name">Swedbank Pay</field>
-        <field name="provider">swedbankpay</field>
-        <field name="company_id" ref="base.main_company" />
-        <field name="view_template_id" ref="swedbankpay_acquirer_button" />
-        <field name="environment">test</field>
-        <field name="pre_msg">
-            <![CDATA[
-                     <p>You will be redirected to the Swedbank Pay website after clicking on the payment button.</p>]]>
-        </field>
-        <field name="swedbankpay_merchant_id">424bf7dc-2c0c-FAKE-SERIAL-5e17551b48</field>
-        <field name="swedbankpay_account_nr">86eb07f6e31359-FAKE-SERIAL-940679befcaba772f9b13916e74ff4fa67b67</field>
-    </record>
+    <data>
+        <record id="payment_acquirer_swedbankpay" model="payment.acquirer">
+            <field name="name">Swedbank Pay</field>
+            <field name="image" type="base64" file="payment_swedbankpay/static/src/img/swedbankpay_icon.png" />
+            <field name="provider">swedbankpay</field>
+            <field name="company_id" ref="base.main_company" />
+            <field name="view_template_id" ref="swedbankpay_acquirer_button" />
+            <field name="environment">test</field>
+            <field name="pre_msg">
+                <![CDATA[
+                         <p>You will be redirected to the Paypal website after clicking on the payment button.</p>]]>
+            </field>
+            <field name="swedbankpay_merchant_id">424bf7dc-2c0c-FAKE-SERIAL-5e17551b48</field>
+            <field name="swedbankpay_account_nr">86eb07f6e31359-FAKE-SERIAL-940679befcaba772f9b13916e74ff4fa67b67</field>
+        </record>
+    </data>
 </odoo>
