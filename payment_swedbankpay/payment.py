@@ -28,8 +28,8 @@ class AcquirerPayex(models.Model):
     _inherit = 'payment.acquirer'
 
     provider = fields.Selection(selection_add=[('swedbankpay', 'Swedbank Pay')])
-    swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='payex')
-    swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='payex')
+    swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='swedbankpay')
+    swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='swedbankpay')
     swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[
         ('DIRECTDEBIT', 'DIRECTDEBIT'), #(Direct bank) – SALE
         ('IDEAL', 'IDEAL'), #(Direct bank) – SALE
