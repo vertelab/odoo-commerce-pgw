@@ -75,6 +75,10 @@ Valid view types – And valid purchaseOperation for those views:
 * CREDITACCOUNT – AUTHORIZATION/SALE
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
+
+    swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
+    swedbankpay_key = "example_swedbank_paykey"
+
     
     @api.multi
     def xxxswedbankpay_form_generate_values(self, partner_values, tx_values):
@@ -86,7 +90,7 @@ Valid view types – And valid purchaseOperation for those views:
     def swedbankpay_form_generate_values(self, values):
         """Method that generates the values used to render the form button template."""
         _logger.warn("Hello world!!! \n\n\n\n")
-        base_url = self.get_base_url()
+        base_url = 'rita.vertel.se'
         swedbankpay_tx_values = dict(values)
         swedbankpay_tx_values.update({
             'Swd_merchant_id': self.swedbankpay_merchant_id,
@@ -94,17 +98,17 @@ Valid view types – And valid purchaseOperation for those views:
             'Swd_view': self.swedbankpay_view,
             'Swd_currency': values['currency'] and values['currency'].name or '',
             'Swd_invoicenumber': values['reference'],
-            'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
-            'payeeReference': tx.reference,
-            'swedbankpayKey': tx.acquirer_id.swedbankpay_key,
-            'orderReference': tx.reference,
+            'payeeId': swedbankpay_tx_values['partner_email'],
+            'payeeReference': swedbankpay_tx_values['reference'],
+            'swedbankpayKey': self.swedbankpay_key,
+            'orderReference': swedbankpay_tx_values['reference'], #Should be some other reference? 
         })
         return swedbankpay_tx_values
     
     
     @api.multi
     def xxbuckaroo_form_generate_values(self, values):
-        base_url = self.get_base_url()
+        base_url = 'rita.vertel.se'
         buckaroo_tx_values = dict(values)
         buckaroo_tx_values.update({
             'Brq_websitekey': self.brq_websitekey,
@@ -125,7 +129,7 @@ Valid view types – And valid purchaseOperation for those views:
     @api.multi
     def xxsips_form_generate_values(self, values):
         self.ensure_one()
-        base_url = self.get_base_url()
+        base_url = 'rita.vertel.se'
         currency = self.env['res.currency'].sudo().browse(values['currency_id'])
         currency_code = CURRENCY_CODES.get(currency.name, False)
         if not currency_code:

@@ -143,4 +143,6 @@ class SwedbankPayController(http.Controller):
                 return '4. Error when contacting Swedbank Pay!'
             return werkzeug.utils.redirect(responseDict.get('operations', [{},{}])[1].get('href'), 302)
 
-        
+    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
+    def init_payment2(self, **post):
+        _logger.warn("\n\n\n\n\n\n Hej \n\n\n\n\n\n")
