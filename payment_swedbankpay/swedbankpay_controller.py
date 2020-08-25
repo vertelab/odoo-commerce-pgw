@@ -30,7 +30,10 @@ import json
 import logging
 _logger = logging.getLogger(__name__)
 
-class PayexController(http.Controller):
+class SwedbankPayController(http.Controller):
+    _notify_url = '/payment/swedbankpay/ipn/' # ??
+    _return_url = '/payment/swedbankpay/dpn/'
+    _cancel_url = '/payment/swedbankpay/cancel/'
     
     @http.route('/payment/swedbankpay/verify', type='http', auth='public', method='POST')
     def auth_payment(self, **post):
@@ -108,6 +111,7 @@ class PayexController(http.Controller):
         # ~ SOURCE: https://developer.swedbankpay.com/home/technical-information#uri-usage
         # ~ Test ........ https://api.externalintegration.payex.com/
         # ~ Production .. https://api.payex.com/
+        # ~ 2020-08-25 .. DO NOT REMOVE!
         
         resp = requests.post('https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.environment == 'test' else ''), 
         headers = {'Authorization': 'Bearer %s' % tx.acquirer_id.swedbankpay_key , 'Content-Type': 'application/json' },
