@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="acquirer_form_swish" model="ir.ui.view">
+            <field name="name">acquirer.form.swish</field>
+            <field name="model">payment.acquirer</field>
+            <field name="inherit_id" ref="payment.acquirer_form" />
+            <field name="arch" type="xml">
+                <xpath expr='//group[@name="acquirer"]' position='after'>
+                    <group attrs="{'invisible': [('provider', '!=', 'swish')]}">
+                        <!-- <field name="swish_cert" /> -->
+                        <!-- <field name="swish_key" /> -->
+                        <!-- <field name="swish_verify" /> -->
+                        <!-- <field name="swish_merchant_number" /> -->
+                        
+                    </group>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

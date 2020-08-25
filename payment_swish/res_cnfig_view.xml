@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<odoo>
+    <!--  Add payment options to sale.order and invoice forms -->
+    <record model="ir.ui.view" id="payment_payperse_option_config">
+        <field name="inherit_id" ref="payment.transaction_form" />
+        <field name="model">payment.transaction</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='acquirer_reference']" position="after">
+                <button name='%(payment.action_payment_acquirer)d' type="action" string="Configure payment acquiring methods" class="oe_link" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

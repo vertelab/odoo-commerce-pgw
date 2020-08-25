@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="swish_acquirer_button">
+            <form t-att-action="tx_url" method="post" target="_self">
+                <!-- <input type="hidden" name="reference" t-att-value="partner_values['reference']" /> -->
+                <!-- <input type="hidden" name="name" t-att-value="partner_values['name']" /> -->
+                <!-- <input type="hidden" name="email" t-att-value="partner_values['email']" /> -->
+                <!-- submit -->
+                <button type="submit" width="100px" t-att-class="submit_class">
+                    <img t-if="not submit_txt" src="/payment_swish/static/src/img/swish_icon.png" />
+                    <span t-if="submit_txt">
+                        <t t-esc="submit_txt" />
+                        <span class="fa fa-long-arrow-right" />
+                    </span>
+                </button>
+            </form>
+        </template>
+        <template id="swish_form">
+            <div>
+                <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
+                <input type="hidden" name="Swd_websitekey" t-att-value="Swd_websitekey"/>
+                <input type="hidden" name="Swd_amount" t-att-value="Swd_amount"/>
+                <input type="hidden" name="Swd_currency" t-att-value="Swd_currency"/>
+                <input type="hidden" name="Swd_invoicenumber" t-att-value="Swd_invoicenumber"/>
+                <input type="hidden" name="Swd_signature" t-att-value="Swd_signature"/>
+                <input type="hidden" name="Swd_test" t-att-value="Swd_test"/>
+                <input type="hidden" name="Swd_culture" t-att-value="Brq_culture"/>
+                <!-- URLs -->
+                <input t-if="Swd_return" type="hidden" name='Swd_return'
+                    t-att-value="Swd_return"/>
+                <input t-if="Swd_returncancel" type="hidden" name='Swd_returncancel'
+                    t-att-value="Swd_returncancel"/>
+                <input t-if="Swd_returnerror" type="hidden" name='Swd_returnerror'
+                    t-att-value="Swd_returnerror"/>
+                <input t-if="Swd_returnreject" type="hidden" name='Swd_returnreject'
+                    t-att-value="Swd_returnreject"/>
+                <input type="hidden" name='add_returndata' t-att-value="add_returndata"/>
+            </div>
+        </template>
+    </data>
+</odoo>
