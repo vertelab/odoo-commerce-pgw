@@ -30,10 +30,49 @@ import json
 import logging
 _logger = logging.getLogger(__name__)
 
+
+class xxBuckarooController(http.Controller):
+    _return_url = '/payment/buckaroo/return'
+    _cancel_url = '/payment/buckaroo/cancel'
+    _exception_url = '/payment/buckaroo/error'
+    _reject_url = '/payment/buckaroo/reject'
+
+    @http.route([
+        '/payment/buckaroo/return',
+        '/payment/buckaroo/cancel',
+        '/payment/buckaroo/error',
+        '/payment/buckaroo/reject',
+    ], type='http', auth='none', csrf=False)
+    def xxbuckaroo_return(self, **post):
+        """ Buckaroo."""
+        _logger.info('Buckaroo: entering form_feedback with post data %s', pprint.pformat(post))  # debug
+        request.env['payment.transaction'].sudo().form_feedback(post, 'buckaroo')
+        post = {key.upper(): value for key, value in post.items()}
+        return_url = post.get('ADD_RETURNDATA') or '/'
+        return werkzeug.utils.redirect('/payment/process')
+
+
+
 class SwedbankPayController(http.Controller):
     _notify_url = '/payment/swedbankpay/ipn/' # ??
-    _return_url = '/payment/swedbankpay/dpn/'
+    _return_url = '/payment/swedbankpay/return/'
     _cancel_url = '/payment/swedbankpay/cancel/'
+    _exception_url = '/payment/swedbankpay/error/'
+    _reject_url = '/payment/swedbankpay/reject/'
+
+    @http.route([
+        '/payment/swedbankpay/return',
+        '/payment/swedbankpay/cancel',
+        '/payment/swedbankpay/error',
+        '/payment/swedbankpay/reject',
+    ], type='http', auth='none', csrf=False)
+    def swedbankpay_return(self, **post):
+        """Swedbank Pay."""
+        _logger.info('Swedbank Pay: entering form_feedback with post data %s', pprint.pformat(post))  # debug
+        request.env['payment.transaction'].sudo().form_feedback(post, 'swedbankpay')
+        post = {key.upper(): value for key, value in post.items()}
+        return_url = post.get('ADD_RETURNDATA') or '/'
+        return werkzeug.utils.redirect('/payment/process')
     
     @http.route('/payment/swedbankpay/verify', type='http', auth='public', method='POST')
     def auth_payment(self, **post):
@@ -146,3 +185,8 @@ class SwedbankPayController(http.Controller):
     @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
     def init_payment2(self, **post):
         _logger.warn("\n\n\n\n\n\n Hej \n\n\n\n\n\n")
+
+
+
+
+

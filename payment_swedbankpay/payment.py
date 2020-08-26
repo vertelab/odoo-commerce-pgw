@@ -27,6 +27,7 @@ import dateutil.parser
 import pytz
 from werkzeug import urls
 
+from odoo.http import request
 from odoo import api, fields, models, _
 from odoo.addons.payment.models.payment_acquirer import ValidationError
 from odoo.addons.payment_paypal.controllers.main import PaypalController
@@ -90,7 +91,11 @@ Valid view types – And valid purchaseOperation for those views:
     def swedbankpay_form_generate_values(self, values):
         """Method that generates the values used to render the form button template."""
         _logger.warn("Hello world!!! \n\n\n\n")
-        base_url = 'rita.vertel.se'
+        # ~ base_url = 'rita.vertel.se'
+        # ~ base_url = self.env['ir.config_parameter'].get_param('web.base.url')
+        base_url = request.httprequest.url_root
+        _logger.warn("logger : base_url = %s \n\n\n\n\n\n\n\n" % base_url)
+        
         swedbankpay_tx_values = dict(values)
         swedbankpay_tx_values.update({
             'Swd_merchant_id': self.swedbankpay_merchant_id,
@@ -98,12 +103,20 @@ Valid view types – And valid purchaseOperation for those views:
             'Swd_view': self.swedbankpay_view,
             'Swd_currency': values['currency'] and values['currency'].name or '',
             'Swd_invoicenumber': values['reference'],
-            'payeeId': swedbankpay_tx_values['partner_email'],
-            'payeeReference': swedbankpay_tx_values['reference'],
-            'swedbankpayKey': self.swedbankpay_key,
-            'orderReference': swedbankpay_tx_values['reference'], #Should be some other reference? 
+            'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
+            'payeeReference': tx.reference,
+            'swedbankpayKey': tx.acquirer_id.swedbankpay_account_nr,
+            'orderReference': tx.reference, #Should be some other reference? 
         })
         return swedbankpay_tx_values
+    
+    # ~ "payeeId": tx.acquirer_id.swedbankpay_merchant_id,
+    # ~ "payeeReference": tx.reference,
+        # ~ "payeeReference": tx.acquirer_id.swedbankpay_account_nr,
+    # ~ "swedbankpayKey": tx.acquirer_id.swedbankpay_key,
+        # ~ "payeeName": "xxxxx",
+        # ~ "productCategory": "xxxxx",
+    # ~ "orderReference": tx.reference,
     
     
     @api.multi
