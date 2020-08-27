@@ -36,7 +36,7 @@ from odoo.tools.float_utils import float_compare
 import logging
 _logger = logging.getLogger(__name__)
 
-class AcquirerPayex(models.Model):
+class AcquirerSwedbankPay(models.Model):
     _inherit = 'payment.acquirer'
 
     provider = fields.Selection(selection_add=[('swedbankpay', 'Swedbank Pay')])
@@ -77,8 +77,37 @@ Valid view types – And valid purchaseOperation for those views:
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
 
+
+    @api.multi ## CODE TAKEN FROM CORE-ODOO // PAYPAL
+    def swedbankpay_form_generate_values(self, values):
+        base_url = self.get_base_url()
+
+        swedbankpay_tx_values = dict(values)
+        swedbankpay_tx_values.update({
+            'cmd': '_xclick',
+            'business': self.paypal_email_account,
+            'item_name': '%s: %s' % (self.company_id.name, values['reference']),
+            'item_number': values['reference'],
+            'amount': values['amount'],
+            'currency_code': values['currency'] and values['currency'].name or '',
+            'address1': values.get('partner_address'),
+            'city': values.get('partner_city'),
+            'country': values.get('partner_country') and values.get('partner_country').code or '',
+            'state': values.get('partner_state') and (values.get('partner_state').code or values.get('partner_state').name) or '',
+            'email': values.get('partner_email'),
+            'zip_code': values.get('partner_zip'),
+            'first_name': values.get('partner_first_name'),
+            'last_name': values.get('partner_last_name'),
+            # ~ 'paypal_return': urls.url_join(base_url, PaypalController._return_url),
+            # ~ 'notify_url': urls.url_join(base_url, PaypalController._notify_url),
+            # ~ 'cancel_return': urls.url_join(base_url, PaypalController._cancel_url),
+            'handling': '%.2f' % paypal_tx_values.pop('fees', 0.0) if self.fees_active else False,
+            # ~ 'custom': json.dumps({'return_url': '%s' % paypal_tx_values.pop('return_url')}) if paypal_tx_values.get('return_url') else False,
+        })
+        return swedbankpay_tx_values
+
     swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
-    swedbankpay_key = "example_swedbank_paykey"
+    swedbankpay_key = "example_swedbank_paykey_artur_example"
 
     
     @api.multi

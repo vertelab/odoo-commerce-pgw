@@ -121,6 +121,8 @@ class SwedbankPayController(http.Controller):
             vatAmount = int( (tx.sale_order_ids.amount_tax / tx.sale_order_ids.amount_untaxed) * 100)
         else:
             vatAmount = 0
+        _logger.warn("5. vatAmount = %s \n\n\n" %  vatAmount )
+        _logger.warn("5. Amount = %s \n\n\n" %  tx.amount )
 
         data = json.dumps({
             "payment": {
@@ -154,17 +156,23 @@ class SwedbankPayController(http.Controller):
             }
         })
 
+        _logger.warn("66. data = json-dump = %s \n\n\n" % data )
         # ~ SOURCE: https://developer.swedbankpay.com/home/technical-information#uri-usage
         # ~ Test ........ https://api.externalintegration.payex.com/
         # ~ Production .. https://api.payex.com/
         # ~ 2020-08-25 .. DO NOT REMOVE!
+        _logger.warn("6. tx.acquirer_id.environment \n\n\n" % tx.acquirer_id.environment )
+        _logger.warn("7. tx.acquirer_id.swedbankpay_key \n\n\n" % tx.acquirer_id.swedbankpay_key )
         
         resp = requests.post('https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.environment == 'test' else ''), 
         headers = {'Authorization': 'Bearer %s' % tx.acquirer_id.swedbankpay_key , 'Content-Type': 'application/json' },
         data=data)
+        _logger.warn("8. http.request \n\n\n" )
 
         if resp.status_code != 201:
             raise Warning('code %s :: message %s' % (resp.status_code, resp.text ))
+
+        _logger.warn("9. http.request \n\n\n" )
 
         if resp:
 
