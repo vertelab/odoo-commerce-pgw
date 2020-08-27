@@ -101,19 +101,26 @@ class SwedbankPayController(http.Controller):
         _logger.warn("Error when contacting Swedbank Pay! Didn't get a response.\n%s" % response)
         return '7. Error when contacting Swedbank Pay!'
         
-    @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
+    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
+    # ~ @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
         """
         Contact Swedbank Pay and redirect customer.
         """
-        _logger.warn("Hello world!!! \n\n\n\n")
+        _logger.warn("1. Hello world!!! \n\n\n\n")
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
-        _logger.warn("Hello world!!! TX %s" % tx )
+        _logger.warn("2. Hello world!!! TX = %s \n\n\n" % tx )
+        _logger.warn("3. tx.sale_order_ids.amount_tax  = %s \n\n\n" % tx.sale_order_ids.amount_tax )
+        _logger.warn("4. tx.sale_order_ids.amount_untaxed = %s \n\n\n" % tx.sale_order_ids.amount_untaxed )
         if not tx:
             werkzeug.utils.redirect('/shop/payment', 302)
         # ~ request.post
         # ~ SWEDBANK PAY CODE DOCUMENTATION
         # ~ https://developer.swedbankpay.com/payments/card/redirect
+        if tx.sale_order_ids.amount_untaxed > 0:
+            vatAmount = int( (tx.sale_order_ids.amount_tax / tx.sale_order_ids.amount_untaxed) * 100)
+        else:
+            vatAmount = 0
 
         data = json.dumps({
             "payment": {
@@ -123,7 +130,7 @@ class SwedbankPayController(http.Controller):
                 "prices": [{
                     "type": "CreditCard",
                     "amount": int(tx.amount * 100),
-                    "vatAmount": int( (tx.sale_order_id.amount_tax / tx.sale_order_id.amount_untaxed) * 100),
+                    "vatAmount": vatAmount,
                 }
                 ],
                 "description": "Test Purchase",
@@ -182,9 +189,9 @@ class SwedbankPayController(http.Controller):
                 return '4. Error when contacting Swedbank Pay!'
             return werkzeug.utils.redirect(responseDict.get('operations', [{},{}])[1].get('href'), 302)
 
-    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
-    def init_payment2(self, **post):
-        _logger.warn("\n\n\n\n\n\n Hej \n\n\n\n\n\n")
+    # ~ @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
+    # ~ def init_payment2(self, **post):
+        # ~ _logger.warn("\n\n\n\n\n\n Hej \n\n\n\n\n\n")
 
 
 
