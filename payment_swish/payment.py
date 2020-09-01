@@ -36,6 +36,7 @@ from odoo.tools.float_utils import float_compare
 import logging
 _logger = logging.getLogger(__name__)
 
+
 class AcquirerSwish(models.Model):
     _inherit = 'payment.acquirer'
 
@@ -58,17 +59,16 @@ class AcquirerSwish(models.Model):
     swish_key = key_file_path
     swish_verify = verify_file_path
     
-
-    swish_key = fields.Char('Swish Key', required_if_provider='swish')
-    swish_key = "example_swish_paykey"
-
+    # >>>>>>  This function is never called, which is very important...  <<<<<
     @api.multi
     def swish_form_generate_values(self, values):
         """Method that generates the values used to render the form button template."""
-        
-        swish_tx_values = dict(values)
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
+        swish_tx_values = dict(values)
+        _logger.warn(' \n\n\n ---->>>  \n\n\n ---->>> ---->>>   %s \n\n\n ' % swish_tx_values)
         # What data to use i dont know...?
+        
         swish_tx_values.update({
             'swish_merchant_number': self.swish_merchant_number,
             'currency': values['currency'] and values['currency'].name or '',
@@ -77,7 +77,12 @@ class AcquirerSwish(models.Model):
             'payeeReference': swish_tx_values['reference'],
             'swishKey': self.swish_key, #Which data should be used???
             'swish_payee_phone': '12345678', # Replace this 
-            'orderReference': swish_tx_values['reference'], #Should be some other reference? 
+            'orderReference': swish_tx_values['reference'], #Should be some other reference?'
+            'notify_url': urls.url_join(base_url, '/payment/swish/initPayment'),
+            #'feedback_url' : '/payment/swish/initPayment'
+            # 'custom': json.dumps({
+                # 'feedback_url': '/payment/swish/initPayment' 
+            # })
         })
         return swish_tx_values
 
@@ -86,6 +91,15 @@ class AcquirerSwish(models.Model):
     def swish_get_form_action_url(self):
         """Returns the url of the button form."""
         return '/payment/swish/initPayment'
+ 
+    @api.multi
+    def get_secret_fields(self):
+        return {
+            'swish_cert' :   self.swish_cert,
+            'swish_key' :    self.swish_key, 
+            'swish_verify' : self.swish_verify,
+            'swish_number' : self.swish_number
+        }
     
     @api.multi
     def swish_compute_fees(self, amount, currency_id, country_id):
@@ -93,16 +107,22 @@ class AcquirerSwish(models.Model):
         self.ensure_one()
         return 0.0
 
+    # Never called either??? 
     # Implementation taken from Wire Transfer for the create and write functions.
-    # This type of implementaion may be redundant.
+    # This type of implementaion may be redundant. 
+    # Or we can use this hook for passing other data...
     # /usr/share/core-odoo/addons/payment_transfer/models/payment.py
     @api.model
     def create(self, values):
         """ Hook in create to create a default post_msg. This is done in create
         to have access to the name and other creation values. If no post_msg
         or a void post_msg is given at creation, generate a default one. """
+
+        
         if values.get('provider') == 'swish' and not values.get('post_msg'):
             values['post_msg'] = self._format_transfer_data()
+        
+        _logger.warn(' \n\n\n ---->>>  \n\n\n ---->>>  %s \n\n\n ' % values)
         return super(AcquirerSwish, self).create(values)
 
     
@@ -117,9 +137,13 @@ class AcquirerSwish(models.Model):
 class TxPayex(models.Model):
     _inherit = 'payment.transaction'
     
+    # This function can not match to the right transaction beacuse i cant get the reference
     @api.model
     def _swish_form_get_tx_from_data(self, data):
-        ref = self._context.get('orderRef')
+        ref = self.reference
+        #ref = self.env['payment.transaction'].search()
+        #_logger.warn(" ---------------->  %s" % ref)
+        
         #if ref: 
         # matches right now all the paymenttransactions ?
         return self.env['payment.transaction'].search([('acquirer_reference', '=', ref)])
