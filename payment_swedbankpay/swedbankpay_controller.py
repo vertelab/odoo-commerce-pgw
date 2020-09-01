@@ -101,7 +101,7 @@ class SwedbankPayController(http.Controller):
         _logger.warn("Error when contacting Swedbank Pay! Didn't get a response.\n%s" % response)
         return '7. Error when contacting Swedbank Pay!'
         
-    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
+    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
     # ~ @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
         """
@@ -110,19 +110,11 @@ class SwedbankPayController(http.Controller):
         _logger.warn("1. Hello world!!! \n\n\n\n")
         tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
         _logger.warn("2. Hello world!!! TX = %s \n\n\n" % tx )
-        _logger.warn("3. tx.sale_order_ids.amount_tax  = %s \n\n\n" % tx.sale_order_ids.amount_tax )
-        _logger.warn("4. tx.sale_order_ids.amount_untaxed = %s \n\n\n" % tx.sale_order_ids.amount_untaxed )
         if not tx:
             werkzeug.utils.redirect('/shop/payment', 302)
         # ~ request.post
         # ~ SWEDBANK PAY CODE DOCUMENTATION
         # ~ https://developer.swedbankpay.com/payments/card/redirect
-        if tx.sale_order_ids.amount_untaxed > 0:
-            vatAmount = int( (tx.sale_order_ids.amount_tax / tx.sale_order_ids.amount_untaxed) * 100)
-        else:
-            vatAmount = 0
-        _logger.warn("5. vatAmount = %s \n\n\n" %  vatAmount )
-        _logger.warn("5. Amount = %s \n\n\n" %  tx.amount )
 
         data = json.dumps({
             "payment": {
@@ -132,9 +124,8 @@ class SwedbankPayController(http.Controller):
                 "prices": [{
                     "type": "CreditCard",
                     "amount": int(tx.amount * 100),
-                    "vatAmount": vatAmount,
-                }
-                ],
+                    "vatAmount": int(sum(tx.sale_order_ids.mapped('amount_tax')) * 100 ),
+                }],
                 "description": "Test Purchase",
                 "userAgent": 'USERAGENT=%s' % request.httprequest.user_agent.string,
                 "language": "sv-SE",
@@ -157,20 +148,37 @@ class SwedbankPayController(http.Controller):
         })
 
         _logger.warn("66. data = json-dump = %s \n\n\n" % data )
+
+        data = {"payment": {"operation": "Purchase", "intent": "Authorization", "currency": 'SEK', "prices": 
+        [{"type": "CreditCard", "amount": '10000', "vatAmount": '2500'}], "description": "Test Purchase", "userAgent": 
+        "USERAGENT=Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0", "language": "sv-SE", "urls": 
+            {"completeUrl": "http://localhost:8069/payment/swedbankpay/verify", "cancelUrl": "http://localhost:8069/shop/payment"},
+             "payeeInfo": {"payeeId": "424bf7dc-2c0c-4d64-b625-dd5e17551b48", "payeeReference": "SO001", "swedbankpayKey": 
+            "86eb07f6e313598322ed5651861940679befcaba772f9b13916e74ff4fa67b67", 
+             "orderReference": "SO002"}}}
+
+        _logger.warn("66. data = json-dump = %s \n\n\n" % data )
         # ~ SOURCE: https://developer.swedbankpay.com/home/technical-information#uri-usage
         # ~ Test ........ https://api.externalintegration.payex.com/
         # ~ Production .. https://api.payex.com/
         # ~ 2020-08-25 .. DO NOT REMOVE!
-        _logger.warn("6. tx.acquirer_id.environment \n\n\n" % tx.acquirer_id.environment )
-        _logger.warn("7. tx.acquirer_id.swedbankpay_key \n\n\n" % tx.acquirer_id.swedbankpay_key )
-        
-        resp = requests.post('https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.environment == 'test' else ''), 
-        headers = {'Authorization': 'Bearer %s' % tx.acquirer_id.swedbankpay_key , 'Content-Type': 'application/json' },
-        data=data)
-        _logger.warn("8. http.request \n\n\n" )
 
-        if resp.status_code != 201:
-            raise Warning('code %s :: message %s' % (resp.status_code, resp.text ))
+        # ~ _logger.warn("6. tx.acquirer_id.environment \n\n\n" % tx.acquirer_id.environment )
+        # ~ _logger.warn("7. tx.acquirer_id.swedbankpay_key \n\n\n" % tx.acquirer_id.swedbankpay_key )
+        
+        # ~ resp = requests.post('https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.environment == 'test' else ''), 
+        # ~ headers = {'Authorization': 'Bearer %s' % tx.acquirer_id.swedbankpay_key , 'Content-Type': 'application/json' },
+        # ~ data=data)
+        resp = requests.post('https://api.externalintegration.payex.com/psp/creditcard/payments', 
+        headers = {'Authorization': 'Bearer 86eb07f6e313598322ed5651861940679befcaba772f9b13916e74ff4fa67b67', 'Content-Type': 'application/json' },
+        data=data)
+        _logger.warn("8. resp = %s \n\n\n" % resp )
+        _logger.warn("8. http.request %s '%s' \n\n\n" % (resp.status_code, resp.text ) )
+
+# ~ int(sum(tx.sale_order_ids.mapped('amount_tax')) * 100 )
+
+        # ~ if resp.status_code != 201:
+            # ~ raise Warning('code %s :: message %s' % (resp.status_code, resp.text ))
 
         _logger.warn("9. http.request \n\n\n" )
 

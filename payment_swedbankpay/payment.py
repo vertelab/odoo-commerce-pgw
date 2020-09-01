@@ -234,17 +234,17 @@ Valid view types – And valid purchaseOperation for those views:
         #~ return fees
         return 0.0
 
-class TxPayex(models.Model):
+class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
     
     @api.model
-    def _payex_form_get_tx_from_data(self, data):
+    def _swedbankpay_form_get_tx_from_data(self, data):
         ref = data.get('orderRef') or self._context.get('orderRef')
         if ref:
             return self.env['payment.transaction'].search([('acquirer_reference', '=', ref)])
     
     @api.model
-    def _payex_form_get_invalid_parameters(self, tx, data):
+    def _swedbankpay_form_get_invalid_parameters(self, tx, data):
         invalid_parameters = []
         status = data.get('status')
         if not status:
@@ -260,13 +260,13 @@ class TxPayex(models.Model):
         return invalid_parameters
     
     @api.model
-    def _payex_form_validate(self, tx, data):
+    def _swedbankpay_form_validate(self, tx, data):
         if data.get('transactionStatus') not in ['0', '3']:
             return False
         return tx.write({'state': 'done', 'date_validate': fields.Datetime.now()})
 
     
     @api.model
-    def payex_create(self, values):
+    def swedbankpay_create(self, values):
         #acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])
         return values

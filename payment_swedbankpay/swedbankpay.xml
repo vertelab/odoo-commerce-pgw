@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+ jakob:jakob<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
         <template id="swedbankpay_acquirer_button">
@@ -18,24 +18,20 @@
         </template>
         <template id="swedbankpay_form">
             <div>
-                <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
-                <input type="hidden" name="Swd_websitekey" t-att-value="Swd_websitekey"/>
-                <input type="hidden" name="Swd_amount" t-att-value="Swd_amount"/>
-                <input type="hidden" name="Swd_currency" t-att-value="Swd_currency"/>
-                <input type="hidden" name="Swd_invoicenumber" t-att-value="Swd_invoicenumber"/>
-                <input type="hidden" name="Swd_signature" t-att-value="Swd_signature"/>
-                <input type="hidden" name="Swd_test" t-att-value="Swd_test"/>
-                <input type="hidden" name="Swd_culture" t-att-value="Brq_culture"/>
+                <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me="" />
+                <input type="hidden" name="Swd_websitekey" t-att-value="Swd_websitekey" />
+                <input type="hidden" name="Swd_amount" t-att-value="Swd_amount" />
+                <input type="hidden" name="Swd_currency" t-att-value="Swd_currency" />
+                <input type="hidden" name="Swd_invoicenumber" t-att-value="Swd_invoicenumber" />
+                <input type="hidden" name="Swd_signature" t-att-value="Swd_signature" />
+                <input type="hidden" name="Swd_test" t-att-value="Swd_test" />
+                <input type="hidden" name="Swd_culture" t-att-value="Brq_culture" />
                 <!-- URLs -->
-                <input t-if="Swd_return" type="hidden" name='Swd_return'
-                    t-att-value="Swd_return"/>
-                <input t-if="Swd_returncancel" type="hidden" name='Swd_returncancel'
-                    t-att-value="Swd_returncancel"/>
-                <input t-if="Swd_returnerror" type="hidden" name='Swd_returnerror'
-                    t-att-value="Swd_returnerror"/>
-                <input t-if="Swd_returnreject" type="hidden" name='Swd_returnreject'
-                    t-att-value="Swd_returnreject"/>
-                <input type="hidden" name='add_returndata' t-att-value="add_returndata"/>
+                <input t-if="Swd_return" type="hidden" name='Swd_return' t-att-value="Swd_return" />
+                <input t-if="Swd_returncancel" type="hidden" name='Swd_returncancel' t-att-value="Swd_returncancel" />
+                <input t-if="Swd_returnerror" type="hidden" name='Swd_returnerror' t-att-value="Swd_returnerror" />
+                <input t-if="Swd_returnreject" type="hidden" name='Swd_returnreject' t-att-value="Swd_returnreject" />
+                <input type="hidden" name='add_returndata' t-att-value="add_returndata" />
             </div>
         </template>
     </data>
