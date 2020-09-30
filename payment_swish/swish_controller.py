@@ -35,13 +35,21 @@ import logging
 _logger = logging.getLogger(__name__)
 
 class SwishController(http.Controller):
-
-    @http.route('/payment/swish', type='json', auth='public', method='POST', csrf=False)
+    # Should we use website=False in the decorator?
+    @http.route('/payment/swish', type='json', auth='none', method='POST', csrf=False, website=False)
     def swish_callback(self, **post): 
         data = json.loads(request.httprequest.data)
+        _logger.warn("~ data from swish %s " % data)
                     
         # Form feedback also calls the functions 
         # * _swish_form_get_tx_from_data 
         # * _swish_form_get_invalid_parameters
         # * _swish_form_validate
-        res = request.env['payment.transaction'].sudo().form_feedback(data=data, acquirer_name='swish')
+        transaction_registered = request.env['payment.transaction'].sudo().form_feedback(data=data, acquirer_name='swish')
+
+        if(transaction_registered):
+            _logger.warn("~ transaction registered... redirect for user?")
+
+    @http.route('/payment/process', type='json', auth='none', method='POST', website=True)
+    def lol(self, **post):
+        _logger.warn("should we use this ?")
