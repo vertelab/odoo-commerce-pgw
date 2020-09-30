@@ -19,7 +19,6 @@
 #
 ##############################################################################
 
-
 import json
 import logging
 import os
@@ -27,6 +26,7 @@ import os
 import dateutil.parser
 import pytz
 from werkzeug import urls
+
 
 from odoo import api, fields, models, _
 from odoo.addons.payment.models.payment_acquirer import ValidationError
@@ -39,7 +39,7 @@ import swish
 
 from random import randint
 import time
-# import requests
+import requests
 
 ####################
 
@@ -50,69 +50,57 @@ _logger = logging.getLogger(__name__)
 class AcquirerSwish(models.Model):
     _inherit = 'payment.acquirer'
 
+    # TODO: Add fields for merchant_number, swish.key, and, cert.pem (they are hardcoded right now)
+    # I dont know where we should such fields yet...
+    # Can we even store files in fields?
+
     current_folder = os.path.dirname(os.path.abspath(__file__))
     cert_file_path = os.path.join(current_folder, "cert.pem")
     key_file_path = os.path.join(current_folder, "key.pem")
     cert = (cert_file_path, key_file_path) 
     verify_file_path = os.path.join(current_folder, "swish.pem")
 
-    # the swish lib requiers a file path to the file...
-    # when reading in the file make it to text first then put in to the field? 
     provider = fields.Selection(selection_add=[('swish', 'Swish')])
     
-    # swish_merchant_number = fields.Char('Merchant Account #', required_if_provider='swish')
-    # swish_cert = fields.Char('Swish Cert', required_if_provider='swish')
-    # swish_key = fields.Char('Swish Key', required_if_provider='swish')
-    # swish_verify = fields.Char('Swish Root Verification', required_if_provider='swish')
-    
-    # swish_number = '123456789'
-    # swish_cert = cert_file_path
-    # swish_key = key_file_path
-    # swish_verify = verify_file_path
-
-    
-    # >>>>>>  This function is never called, which is very important...  <<<<<
     @api.multi
     def swish_form_generate_values(self, values):
         """Method that generates the values used to render the form button template."""
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
+        # Important to note, the transaction reference is gotten from these values
         swish_tx_values = dict(values)
-        _logger.warn(' \n\n\n ---->>>  swish_form_generate_values ---->>>   %s \n\n\n ' % swish_tx_values)
-        # What data to use i dont know...?
         
-        # swish_tx_values.update({
-        #     'swish_merchant_number': '12345678',
-        #     'currency': values['currency'] and values['currency'].name or '',
-        #     'invoicenumber': values['reference'],
-        #     'swish_payee_refernce': swish_tx_values['partner_phone'],
-        #     'payeeReference': swish_tx_values['reference'],
-        #     'swishKey': self.swish_key, #Which data should be used???
-        #     'swish_payee_phone': '12345678', # Replace this 
-        #     'orderReference': swish_tx_values['reference'], #Should be some other reference?'
-        #     'notify_url': urls.url_join(base_url, '/payment/swish/initPayment'),
-        #     #'feedback_url' : '/payment/swish/initPayment'
-        #     # 'custom': json.dumps({
-        #         # 'feedback_url': '/payment/swish/initPayment' 
-        #     # })
-        # })
-
-        # Here is one important thing that is happening is to send a reference, to swish...
-        self.create_swish_payment(values)
+        # self.create_swish_payment(values)
+        _logger.warn("~ %s " % "swish_from_generate_values")
+        self.create_fake_swish_call(values)
         return swish_tx_values
 
     # Redundant to use decorator ? 
     # @api.multi
     def swish_get_form_action_url(self):
         """Returns the url of the button form."""
-        return '/payment/swish/initPayment'
- 
+        # Should use this custom swish later ?
+        # return '/payment/swish/initPayment'
+        return '/payment/process'
     
     @api.multi
     def swish_compute_fees(self, amount, currency_id, country_id):
         """TODO: Compute fees."""
         self.ensure_one()
         return 0.0
+
+
+    def _format_transfer_data(self):
+        post_msg = _('''<div>
+<h3>Please use the following transfer details</h3>
+<h4>%(bank_title)s</h4>
+%(bank_accounts)s
+<h4>Communication</h4>
+<p>Please use the order name as communication reference.</p>
+</div>''')  % {
+        'bank_title': "RANDOM SWISH TITLE",
+        'bank_accounts': "BANK ACCOUNT WOWOWOWOWWOW!!! ",
+        }
+
 
     # Implementation taken from Wire Transfer for the create and write functions.
     # This type of implementaion may be redundant. 
@@ -123,29 +111,24 @@ class AcquirerSwish(models.Model):
         """ Hook in create to create a default post_msg. This is done in create
         to have access to the name and other creation values. If no post_msg
         or a void post_msg is given at creation, generate a default one. """
+        _logger.warn("~ CREATE AQUirer!!! ")
 
-        
         if values.get('provider') == 'swish' and not values.get('post_msg'):
+            _logger.warn("~ CREATE post msg get!!! ")
             values['post_msg'] = self._format_transfer_data()
-        
-        _logger.warn(' \n\n\n ---->>>  create---->>>  %s \n\n\n ' % values)
         return super(AcquirerSwish, self).create(values)
 
-    
+
     @api.multi
     def write(self, values):
         """ Hook in write to create a default post_msg. See create(). """
-        _logger.warn(' \n\n\n ---->>>  write ---->>>  %s \n\n\n ' % values)
-
         if all(not acquirer.post_msg and acquirer.provider != 'swish' for acquirer in self) and values.get('provider') == 'swish':
             values['post_msg'] = self._format_transfer_data()
         return super(AcquirerSwish, self).write(values)
 
+
     @api.model
     def create_swish_payment(self, tx_val):
-        _logger.warn(' \n ---->>> \n ---->>> \n ---->>>  create_swish_payment ref ---->>>  %s \n ---->>> \n ---->>> \n ' % tx_val )
-
-
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')    
         callback_url = base_url.replace('http', 'https') + '/payment/swish'
         currency = tx_val['currency'].name
@@ -164,33 +147,72 @@ class AcquirerSwish(models.Model):
             verify=verify
         )
 
-
-
         swish_payment = swish_client.create_payment(
-            payee_payment_reference = tx_val['reference'], 
+            payee_payment_reference = tx_val['reference'], # This reference is used in the transaction!
             callback_url = callback_url,
             payer_alias = payer_alias,
             amount = tx_val['amount'],
             currency = "SEK", #str(tx['currency_id'].name),
             message = 'Order '
         )
+
+    @api.model
+    def create_fake_swish_call(self, tx_val):
+        callback_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/payment/swish'
+        _logger.warn("~ callback_url %s" %  callback_url)
+        payer_alias = str(tx_val['partner_phone']).replace(' ','').replace('-','').replace('+','')
+
         
+        # Typical return data from swish
+        # Date format: 'YYYY-MM-DDThh:mm:ssTZD'
+        swish_data =  {
+            'id': 'RANDOM_SWISH_ID',
+            'payeePaymentReference': tx_val['reference'],
+            'paymentReference': '8A5AA8BF2C074665A0A85B6B0E329AA5',
+            'callbackUrl': 'https://swish.azzar.pl/payment/swish',
+            'payerAlias': payer_alias,
+            'payeeAlias': '1231181189',
+            'currency': 'SEK',
+            'message': 'Order ',
+            'errorMessage': None,
+            'status': 'PAID',
+            'amount': str(tx_val['amount']),
+            'dateCreated': '2020-09-04T14:00:45.748+0000',
+            'datePaid': '2020-09-04T14:00:49.748+0000',
+            'errorCode': None
+        }
+
+        transaction_registered = self.env['payment.transaction'].sudo().form_feedback(data=swish_data, acquirer_name='swish')
+
+        if(transaction_registered):
+            _logger.warning("~ Transaction is registered!!")
 
 
 class TxPayex(models.Model):
     _inherit = 'payment.transaction'
+
+    swish_transaction_id = fields.Char('Swish transaction id')
+    swish_transaction_payment_reference = fields.Char('Swish payment reference')
+
     # Maybe add fields like: 
     # * swish_id
     # * swish_payment_reference
-    # * 
+   
+    # These functions are triggered by making a payment on the website "Betala nu"-knappen
+    # Fucntions will be executed in this order: 
+    #   1. _<acquirer-name>_form_get_tx_from_data
+    #   2. _<acquirer-name>_form_get_invalid_parameters
+    #   3. _<acquirer-name>__form_validate
+    # For more information /usr/share/core-odoo/addons/payment/models/payment_acquirer.py 
+    # in the function PaymentTransaction.form_feedback
 
 
+    # Here we find the transaction that is connected to the sale order (sale cart)
+    # This is done by looking after the reference that odoo generates for the sale order 
+    # (the reference value is passed through _form_generate_values function)
     @api.model
     def _swish_form_get_tx_from_data(self, data):
-        _logger.warn(' \n\n\n ---->>>  _swish_form_get_tx_from_data---->>>  %s \n\n\n ' % data)
-        # Match the transaction here with the swish response. 
-        # In this solution we dont send a tx id to swish, which may be not enough?   
-        
+        _logger.warn('~ _swish_form_get_tx_from_data  REFERENCE: %s  ' % data['payeePaymentReference'])        
         reference = data['payeePaymentReference']
         if not reference:
             error_msg = 'Swish: received data with missing reference (%s)' % reference
@@ -208,71 +230,53 @@ class TxPayex(models.Model):
             raise ValidationError(error_msg)
         return txs[0]
 
+    # If there is any invalid_parameters the next function will not be executed.
     @api.model
     def _swish_form_get_invalid_parameters(self, data):
+        _logger.warn(" ~ _swish_form_get_invalid_parameters %s " % "None!")
+
         invalid_parameters = []
-        status = data['status']
-        if not status:
+        if not data['status']:
             invalid_parameters.append(('status', 'None', "A value"))
             return invalid_parameters
-        if(status == 'ERROR'):
-            invalid_parameters.append(('errorCode', 'data[errorCode]', data[errorCode]))
-            invalid_parameters.append(('errorMessage', 'data[errorMessage]', data[errorMessage]))
+        if(data['status'] == 'ERROR'):
+            invalid_parameters.append(('errorCode', data['errorCode'], 'None' ))
+            invalid_parameters.append(('errorMessage', data['errorMessage'], 'None'))
+        if(data['status'] == 'DECLINED'):
+            invalid_parameters.append(('Declined', 'The payer declined to make the payment', ''))
+        if(data['status'] == 'CANCELLED'):
+            invalid_parameters.append((
+                'Cancelled', 
+                'The payment request was cancelled either by the merchant or by the payer via the merchant site.', 
+                ''
+            ))
         return invalid_parameters
 
-        _logger.warn("\n\n\n <<<<<<<<<  _swish_form_get_invalid_parameters \n linked payment transaction   <<<<<<<<<< %s \n" % tx.read() )
-        
-
-    
+            
     @api.model
     def _swish_form_validate(self, data):
-        _logger.warn("\n\n\n <<<<<<<<<  _swish_form_validate \n   <<<<<<<<<< %s \n" % tx.read() )
+        _logger.warn("~ _swish_form_validate  %s" % data )
 
-        # status = data['status']
-        # date = data[]
-        # former_tx_state = self.state
-        # res = {
-# 
-# 
-        # }
-        # return True
+        status = data['status']
+        former_tx_state = self.state
+        res = {
+            'acquirer_reference': data['payeePaymentReference'],
+            'swish_transaction_id': data['id'], 
+            'swish_transaction_payment_reference': data['paymentReference']
+        }
 
+        if status in ['PAID']:
+            try:
+                date = dateutil.parser.parse(data['datePaid']).astimezone(pytz.utc)
+                _logger.warn("~ %s" % date)
+            except:
+                date = fields.Datetime.now()
 
-
-        # status = data.get('payment_status')
-        # former_tx_state = self.state
-        # res = {
-        #     'acquirer_reference': data.get('txn_id'),
-        #     'paypal_txn_type': data.get('payment_type'),
-        # }
-        # if status in ['Completed', 'Processed']:
-        #     try:
-        #         # dateutil and pytz don't recognize abbreviations PDT/PST
-        #         tzinfos = {
-        #             'PST': -8 * 3600,
-        #             'PDT': -7 * 3600,
-        #         }
-        #         date = dateutil.parser.parse(data.get('payment_date'), tzinfos=tzinfos).astimezone(pytz.utc)
-        #     except:
-        #         date = fields.Datetime.now()
-        #     res.update(date=date)
-        #     self._set_transaction_done()
-        #     if self.state == 'done' and self.state != former_tx_state:
-        #         _logger.info('Validated Paypal payment for tx %s: set as done' % (self.reference))
-        #         return self.write(res)
-        #     return True
-        # elif status in ['Pending', 'Expired']:
-        #     res.update(state_message=data.get('pending_reason', ''))
-        #     self._set_transaction_pending()
-        #     if self.state == 'pending' and self.state != former_tx_state:
-        #         _logger.info('Received notification for Paypal payment %s: set as pending' % (self.reference))
-        #         return self.write(res)
-        #     return True
-        # else:
-        #     error = 'Received unrecognized status for Paypal payment %s: %s, set as error' % (self.reference, status)
-        #     res.update(state_message=error)
-        #     self._set_transaction_cancel()
-        #     if self.state == 'cancel' and self.state != former_tx_state:
-        #         _logger.info(error)
-        #         return self.write(res)
-        #     return True
+            res.update(date=date)
+            self._set_transaction_done()
+            if self.state == 'done' and self.state != former_tx_state:
+                _logger.info('~ Validated swish payment for tx %s: set as done' % (self.reference))
+                return self.write(res)
+        
+            _logger.warn("~ %s" % "End of swish validate returns true")  
+            return True
