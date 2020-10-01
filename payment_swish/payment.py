@@ -71,7 +71,11 @@ class AcquirerSwish(models.Model):
         
         # self.create_swish_payment(values)
         _logger.warn("~ %s " % "swish_from_generate_values")
-        self.create_fake_swish_call(values)
+        
+        # Bypass controller answer test transaction instead...
+        # self.create_fake_swish_call(values)
+        
+        self.create_swish_payment(values)
         return swish_tx_values
 
     # Redundant to use decorator ? 
@@ -129,8 +133,11 @@ class AcquirerSwish(models.Model):
 
     @api.model
     def create_swish_payment(self, tx_val):
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')    
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
         callback_url = base_url.replace('http', 'https') + '/payment/swish'
+        _logger.warn("~ create_swish_payment callback_url: %s" %  callback_url)
+
         currency = tx_val['currency'].name
         payer_alias = str(tx_val['partner_phone']).replace(' ','').replace('-','').replace('+','')
 
@@ -146,12 +153,21 @@ class AcquirerSwish(models.Model):
             cert=cert,
             verify=verify
         )
+        
+        # Only use 2 decimal points.
+        amount_str = str(tx_val['amount']).split(".")
+        amount_str[1] = amount_str[1][0:2]
+        amount_final = float(str(amount_str[0]) + "." + str(amount_str[1]))
+
+
+        _logger.warning("~ %s" % str(amount_final))
+
 
         swish_payment = swish_client.create_payment(
             payee_payment_reference = tx_val['reference'], # This reference is used in the transaction!
             callback_url = callback_url,
             payer_alias = payer_alias,
-            amount = tx_val['amount'],
+            amount = amount_final,
             currency = "SEK", #str(tx['currency_id'].name),
             message = 'Order '
         )
