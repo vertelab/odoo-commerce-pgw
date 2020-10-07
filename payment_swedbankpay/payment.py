@@ -33,8 +33,13 @@ from odoo.addons.payment.models.payment_acquirer import ValidationError
 from odoo.addons.payment_paypal.controllers.main import PaypalController
 from odoo.tools.float_utils import float_compare
 
+from odoo.http import request
+
 import logging
 _logger = logging.getLogger(__name__)
+
+import pprint
+import requests
 
 class AcquirerSwedbankPay(models.Model):
     _inherit = 'payment.acquirer'
@@ -116,126 +121,60 @@ Valid view types – And valid purchaseOperation for those views:
         self.ensure_one()
         return partner_values, tx_values
 
+    # 
     @api.multi
     def swedbankpay_form_generate_values(self, values):
-        """Method that generates the values used to render the form button template."""
-        _logger.warn("Hello world!!! \n\n\n\n")
-        # ~ base_url = 'rita.vertel.se'
-        # ~ base_url = self.env['ir.config_parameter'].get_param('web.base.url')
+        _logger.warn("~ %s " % "swedbankpay_form_generate_values")
         base_url = request.httprequest.url_root
-        _logger.warn("logger : base_url = %s \n\n\n\n\n\n\n\n" % base_url)
         
+        currency_name = self.env['res.currency'].search([
+            ("id","=",str(values['currency_id']))
+        ]).name
+
+        sale_order_id = str(values['reference']).split("-")[0]
+        sale_order_amount_tax = self.env['sale.order'].search([
+            ('name','=',sale_order_id)
+        ]).amount_tax
+
         swedbankpay_tx_values = dict(values)
+
         swedbankpay_tx_values.update({
-            'Swd_merchant_id': self.swedbankpay_merchant_id,
-            'Swd_account_nr': self.swedbankpay_account_nr,
-            'Swd_view': self.swedbankpay_view,
-            'Swd_currency': values['currency'] and values['currency'].name or '',
-            'Swd_invoicenumber': values['reference'],
-            'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
-            'payeeReference': tx.reference,
-            'swedbankpayKey': tx.acquirer_id.swedbankpay_account_nr,
-            'orderReference': tx.reference, #Should be some other reference? 
-        })
+            'swd_currency_name': str(currency_name), 
+            'swd_amount' : int(values['amount'] * 100),
+            'swd_vatAmount': int(sale_order_amount_tax * 100), 
+            'swd_refernce' : values['reference']
+
+             # 'Swd_merchant_id': self.swedbankpay_merchant_id,
+             # 'Swd_account_nr': self.swedbankpay_account_nr,
+             # 'Swd_view': self.swedbankpay_view,
+             # 'Swd_currency': values['currency'] and values['currency'].name or '',
+             # 'Swd_invoicenumber': values['reference'],
+             # 'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
+             # 'payeeReference': tx.reference,
+             # 'swedbankpayKey': tx.acquirer_id.swedbankpay_account_nr, 
+             # 'orderReference': tx.reference, #Should be some other reference? 
+         })
+
         return swedbankpay_tx_values
-    
-    # ~ "payeeId": tx.acquirer_id.swedbankpay_merchant_id,
-    # ~ "payeeReference": tx.reference,
-        # ~ "payeeReference": tx.acquirer_id.swedbankpay_account_nr,
-    # ~ "swedbankpayKey": tx.acquirer_id.swedbankpay_key,
-        # ~ "payeeName": "xxxxx",
-        # ~ "productCategory": "xxxxx",
-    # ~ "orderReference": tx.reference,
-    
-    
-    @api.multi
-    def xxbuckaroo_form_generate_values(self, values):
-        base_url = 'rita.vertel.se'
-        buckaroo_tx_values = dict(values)
-        buckaroo_tx_values.update({
-            'Brq_websitekey': self.brq_websitekey,
-            'Brq_amount': values['amount'],
-            'Brq_currency': values['currency'] and values['currency'].name or '',
-            'Brq_invoicenumber': values['reference'],
-            'brq_test': False if self.environment == 'prod' else True,
-            'Brq_return': urls.url_join(base_url, BuckarooController._return_url),
-            'Brq_returncancel': urls.url_join(base_url, BuckarooController._cancel_url),
-            'Brq_returnerror': urls.url_join(base_url, BuckarooController._exception_url),
-            'Brq_returnreject': urls.url_join(base_url, BuckarooController._reject_url),
-            'Brq_culture': (values.get('partner_lang') or 'en_US').replace('_', '-'),
-            'add_returndata': buckaroo_tx_values.pop('return_url', '') or '',
-        })
-        buckaroo_tx_values['Brq_signature'] = self._buckaroo_generate_digital_sign('in', buckaroo_tx_values)
-        return buckaroo_tx_values
-
-    @api.multi
-    def xxsips_form_generate_values(self, values):
-        self.ensure_one()
-        base_url = 'rita.vertel.se'
-        currency = self.env['res.currency'].sudo().browse(values['currency_id'])
-        currency_code = CURRENCY_CODES.get(currency.name, False)
-        if not currency_code:
-            raise ValidationError(_('Currency not supported by Wordline'))
-        amount = round(values['amount'] * 100)
-        if self.environment == 'prod':
-            # For production environment, key version 2 is required
-            merchant_id = getattr(self, 'sips_merchant_id')
-            key_version = self.env['ir.config_parameter'].sudo().get_param('sips.key_version', '2')
-        else:
-            # Test key provided by Atos Wordline works only with version 1
-            merchant_id = '002001000000001'
-            key_version = '1'
-
-        sips_tx_values = dict(values)
-        sips_tx_values.update({
-            'Data': u'amount=%s|' % amount +
-                    u'currencyCode=%s|' % currency_code +
-                    u'merchantId=%s|' % merchant_id +
-                    u'normalReturnUrl=%s|' % urls.url_join(base_url, SipsController._return_url) +
-                    u'automaticResponseUrl=%s|' % urls.url_join(base_url, SipsController._notify_url) +
-                    u'transactionReference=%s|' % values['reference'] +
-                    u'statementReference=%s|' % values['reference'] +
-                    u'keyVersion=%s' % key_version,
-            'InterfaceVersion': self.sips_version,
-        })
-
-        return_context = {}
-        if sips_tx_values.get('return_url'):
-            return_context[u'return_url'] = u'%s' % urls.url_quote(sips_tx_values.pop('return_url'))
-        return_context[u'reference'] = u'%s' % sips_tx_values['reference']
-        sips_tx_values['Data'] += u'|returnContext=%s' % (json.dumps(return_context))
-
-        shasign = self._sips_generate_shasign(sips_tx_values)
-        sips_tx_values['Seal'] = shasign
-        return sips_tx_values    
 
 
-
-    
+    # TODO: Dont know if this can be used 
     @api.multi
     def swedbankpay_get_form_action_url(self):
         """Returns the url of the button form."""
         return '/payment/swedbankpay/initPayment'
     
+    """TODO: Compute fees?"""    
     @api.multi
     def swedbankpay_compute_fees(self, amount, currency_id, country_id):
-        """TODO: Compute fees."""
         self.ensure_one()
         if not self.fees_active:
             return 0.0
-        #~ currency = self.env['res.currency'].browse(currency_id)
-        #~ if currency and currency.name == 'EUR':
-            #~ fixed = self.fees_int_fixed
-            #~ percentage = self.fees_int_var
-        #~ elif currency and currency.name == 'SEK':
-            #~ fixed = self.fees_dom_fixed
-            #~ percentage = self.fees_dom_var
-        #~ fees = (percentage / 100.0 * amount + fixed )
-        #~ return fees
         return 0.0
 
 class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
+    swedbankpay_transaction_uri = fields.Char('Swedbank pay transaction URI')
     
     @api.model
     def _swedbankpay_form_get_tx_from_data(self, data):
@@ -265,7 +204,7 @@ class TxSwedbankPay(models.Model):
             return False
         return tx.write({'state': 'done', 'date_validate': fields.Datetime.now()})
 
-    
+    # ? 
     @api.model
     def swedbankpay_create(self, values):
         #acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])

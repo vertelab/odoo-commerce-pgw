@@ -26,190 +26,180 @@ from odoo.http import request
 import werkzeug
 import requests
 import json
+
  
 import logging
 _logger = logging.getLogger(__name__)
 
+import pprint
 
-class xxBuckarooController(http.Controller):
-    _return_url = '/payment/buckaroo/return'
-    _cancel_url = '/payment/buckaroo/cancel'
-    _exception_url = '/payment/buckaroo/error'
-    _reject_url = '/payment/buckaroo/reject'
+# TODO: 
+# Do some type of redirect, either use odoos or use an button for redirection (new snippet) that calls on controllers here.
 
-    @http.route([
-        '/payment/buckaroo/return',
-        '/payment/buckaroo/cancel',
-        '/payment/buckaroo/error',
-        '/payment/buckaroo/reject',
-    ], type='http', auth='none', csrf=False)
-    def xxbuckaroo_return(self, **post):
-        """ Buckaroo."""
-        _logger.info('Buckaroo: entering form_feedback with post data %s', pprint.pformat(post))  # debug
-        request.env['payment.transaction'].sudo().form_feedback(post, 'buckaroo')
-        post = {key.upper(): value for key, value in post.items()}
-        return_url = post.get('ADD_RETURNDATA') or '/'
-        return werkzeug.utils.redirect('/payment/process')
-
+# An other way is to "hjiack" the core-odoo controllers and "extend" them, 
+# check the routes in the controller /usr/share/core-odoo/addons/website_sale/controllers/main.py  
+# /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation 
 
 
 class SwedbankPayController(http.Controller):
-    _notify_url = '/payment/swedbankpay/ipn/' # ??
-    _return_url = '/payment/swedbankpay/return/'
-    _cancel_url = '/payment/swedbankpay/cancel/'
-    _exception_url = '/payment/swedbankpay/error/'
-    _reject_url = '/payment/swedbankpay/reject/'
 
-    @http.route([
-        '/payment/swedbankpay/return',
-        '/payment/swedbankpay/cancel',
-        '/payment/swedbankpay/error',
-        '/payment/swedbankpay/reject',
-    ], type='http', auth='none', csrf=False)
-    def swedbankpay_return(self, **post):
-        """Swedbank Pay."""
-        _logger.info('Swedbank Pay: entering form_feedback with post data %s', pprint.pformat(post))  # debug
-        request.env['payment.transaction'].sudo().form_feedback(post, 'swedbankpay')
-        post = {key.upper(): value for key, value in post.items()}
-        return_url = post.get('ADD_RETURNDATA') or '/'
-        return werkzeug.utils.redirect('/payment/process')
-    
-    @http.route('/payment/swedbankpay/verify', type='http', auth='public', method='POST')
+    # is called if user directly decline the payment in the redirect link 
+    @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
+    def swedbankpay_cancel(self, **post): 
+
+        return "payment canceled!"
+
+    @http.route('/payment/swedbankpay/callback', type='http', auth='none', csrf=False)
+    def swedbankpay_callback(self, **post):
+        _logger.warning("~ callback %s" % post)
+        return "payment callbacked!"
+
+    # Use the unique id that was sent in  values["complete_url"] 
+    @http.route('/payment/swedbankpay/verify/<transaction_aquierers_id>', type='http', auth='public', method='POST')
     def auth_payment(self, **post):
-        """
-        Customer returns from Swedbank Pay. Look up status of order.
-        """
-        _logger.warn(post)
-        ref = post.get('orderReference', '')
-        if not ref:
-            _logger.warn("Error in Swedbank Pay return. No reference found!")
-            return "5. Error when contacting Swedbank Pay!"
-        tx = request.env['payment.transaction'].sudo()._swedbankpay_form_get_tx_from_data(post)
-        if not tx:
-            _logger.warn("Error in Swedbank Pay return. No transaction found!")
-            return "6. Error when contacting Swedbank Pay!"
-        service = PayEx(
-            merchant_number=tx.acquirer_id.swedbankpay_account_nr,
-            encryption_key=tx.acquirer_id.swedbankpay_key,
-            production=tx.acquirer_id.environment == 'prod')
-        response = service.complete(orderRef=ref)
-        _logger.warn("Swedbank Pay response: %s" % response)
-        if response:
-            if request.env['payment.transaction'].sudo().with_context({'orderRef': ref}).form_feedback(response, 'swedbankpay'):
-                return werkzeug.utils.redirect('/shop/payment/validate', 302)
-            return "Couldn't verify your payment!"
-        _logger.warn("Error when contacting Swedbank Pay! Didn't get a response.\n%s" % response)
-        return '7. Error when contacting Swedbank Pay!'
-        
-    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
-    # ~ @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
-    def init_payment(self, **post):
-        """
-        Contact Swedbank Pay and redirect customer.
-        """
-        _logger.warn("1. Hello world!!! \n\n\n\n")
-        tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
-        _logger.warn("2. Hello world!!! TX = %s \n\n\n" % tx )
-        if not tx:
-            werkzeug.utils.redirect('/shop/payment', 302)
-        # ~ request.post
-        # ~ SWEDBANK PAY CODE DOCUMENTATION
-        # ~ https://developer.swedbankpay.com/payments/card/redirect
 
-        data = json.dumps({
+        tx = request.env['payment.transaction'].search([
+            ('acquirer_id','=', parameter)
+        ])
+
+        #Use tx.swedbankpay_transaction_uri = resp.json()['payment']['id'] for getting the payment status... 
+        # As written in the swedbankpay docs: 
+        """
+        This means that when you reach this point, you need to make sure that the payment has gone
+        through before you let the payer know that the payment was successful. You do this by doing a GET request. 
+        This request has to include the payment Id generated from the initial POST request, 
+        so that you can receive the state of the transaction.
+        """
+
+        return "test"        
+    
+    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
+    def init_payment_to_aqcuirer(self, **post):        
+        swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
+
+        sale_order_id =  request.session.get('sale_order_id', -1)
+        transaction_id = request.session['__website_sale_last_tx_id']
+        # TODO: validate sale_order and transaction_id ?
+
+        values = self.get_payment_values(transaction_id,sale_order_id)
+        data = self.format_payment_request(values)
+
+        headers = {
+            'Authorization': 'Bearer %s' % values['bearer'], 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+
+        resp = requests.post(swedbankpay_url, headers=headers, data=data)
+        
+        response_validation = self.check_response(resp, transaction_id)
+        if not (response_validation["ok"]):
+            _logger.warning("~~ ERORRS! ~~~")
+            _logger.warning("~  ERROR MESSAGE: %s " % response_validation["error_message"])
+            _logger.warning("~  PROBLEMS: %s " % response_validation["problems"])
+            _logger.warning("~  PAYMENT VALUES: %s " % values)
+            return response_validation["error_message"] # does this return work?!
+        else: 
+            _logger.warning("~~~~~~~~~~~~~~~~~~~~")
+
+            redirect_url = self.get_redirect_url(resp.json()['operations'])
+            _logger.warning("~ ----> redirect_url %s " % redirect_url)
+            
+            tx = request.env['payment.transaction'].search([
+                ('id','=', transaction_id)
+            ])
+
+            # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
+            tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
+
+            
+
+    def get_payment_values(self, transaction_id, sale_order_id):
+        tx = request.env['payment.transaction'].search([
+            ('id','=', transaction_id)
+        ])
+        
+        values = {}
+        values['base_url'] = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
+        values['currency_name'] = request.env['res.currency'].search([
+            ("id","=",str(tx.currency_id.id))
+        ]).name
+        
+        # Use value that is unique, otherwise a returning customer cant be used... 
+        values['reference'] = tx.acquirer_reference
+
+        sale_order_id = request.session.get('sale_order_id', -1)
+        
+        sale_order = request.env['sale.order'].search([
+            ('id','=',str(sale_order_id))
+        ])
+        
+        values['amount_tax'] = sale_order.amount_tax
+        values['amount'] = sale_order.amount_total
+        
+        swedbank_pay = request.env['payment.acquirer'].sudo().search([
+            ('id','=',str(tx.acquirer_id.id))
+        ])
+
+        # TODO: 
+        # Problem with these sometimes fields, they get updated if i restart/update the module.
+        # There is an "noupdate" on the data fields.  
+        values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
+        values['bearer'] = swedbank_pay.swedbankpay_account_nr
+        
+        values["complete_url"] = '%s/payment/swedbankpay/verify/%s' % (values['base_url'], tx.acquirer_reference)  
+        return values
+
+
+    def format_payment_request(self, values):
+        return json.dumps({
             "payment": {
                 "operation": "Purchase",
                 "intent": "Authorization",
-                "currency": tx.currency_id.name,
+                "currency": values['currency_name'],
                 "prices": [{
                     "type": "CreditCard",
-                    "amount": int(tx.amount * 100),
-                    "vatAmount": int(sum(tx.sale_order_ids.mapped('amount_tax')) * 100 ),
+                    "amount":  int(values['amount'] * 100),
+                    "vatAmount": int(values['amount_tax'] * 100), 
                 }],
+                ## TODO: Use better description!
                 "description": "Test Purchase",
                 "userAgent": 'USERAGENT=%s' % request.httprequest.user_agent.string,
                 "language": "sv-SE",
                 "urls": {
-                    "completeUrl": '%s/payment/swedbankpay/verify' % request.env['ir.config_parameter'].sudo().get_param('web.base.url'),
-                    "cancelUrl": '%s/shop/payment' % request.env['ir.config_parameter'].sudo().get_param('web.base.url'),
-                    # ~ "logoUrl":  '%s/logo500.png' % request.env['ir.config_parameter'].sudo().get_param('web.base.url'),
+                    "completeUrl": values['complete_url'], #'%s/payment/swedbankpay/verify' % values['base_url'],
+                    "cancelUrl": '%s/payment/swedbankpay/cancel' % values['base_url'], # Or redirect to back to the shop? 
+                    "callbackUrl": '%s/payment/swedbankpay/callback' % values['base_url'],
                 },
                 "payeeInfo": {
-                    "payeeId": tx.acquirer_id.swedbankpay_merchant_id,
-                    "payeeReference": tx.reference,
-                    # ~ "payeeReference": tx.acquirer_id.swedbankpay_account_nr,
-                    "swedbankpayKey": tx.acquirer_id.swedbankpay_key,
-                    # ~ "payeeName": "xxxxx",
-                    # ~ "productCategory": "xxxxx",
-                    "orderReference": tx.reference,
-                    # ~ "subsite": request.env['ir.config_parameter'].sudo().get_param('web.base.url'),
+                    "payeeId": values['merchant_id'],  # self.swedbankpay_merchant_id 
+                    "payeeReference": values['reference'],
                 }
             }
         })
 
-        _logger.warn("66. data = json-dump = %s \n\n\n" % data )
 
-        data = {"payment": {"operation": "Purchase", "intent": "Authorization", "currency": 'SEK', "prices": 
-        [{"type": "CreditCard", "amount": '10000', "vatAmount": '2500'}], "description": "Test Purchase", "userAgent": 
-        "USERAGENT=Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0", "language": "sv-SE", "urls": 
-            {"completeUrl": "http://localhost:8069/payment/swedbankpay/verify", "cancelUrl": "http://localhost:8069/shop/payment"},
-             "payeeInfo": {"payeeId": "424bf7dc-2c0c-4d64-b625-dd5e17551b48", "payeeReference": "SO001", "swedbankpayKey": 
-            "86eb07f6e313598322ed5651861940679befcaba772f9b13916e74ff4fa67b67", 
-             "orderReference": "SO002"}}}
+    def get_redirect_url(self, operations):
+        for operation in operations:
+            _logger.warning(type(operation['rel']))
+            if str(operation['rel']) == "redirect-authorization":
+                return operation['href']
 
-        _logger.warn("66. data = json-dump = %s \n\n\n" % data )
-        # ~ SOURCE: https://developer.swedbankpay.com/home/technical-information#uri-usage
-        # ~ Test ........ https://api.externalintegration.payex.com/
-        # ~ Production .. https://api.payex.com/
-        # ~ 2020-08-25 .. DO NOT REMOVE!
 
-        # ~ _logger.warn("6. tx.acquirer_id.environment \n\n\n" % tx.acquirer_id.environment )
-        # ~ _logger.warn("7. tx.acquirer_id.swedbankpay_key \n\n\n" % tx.acquirer_id.swedbankpay_key )
+    def check_response(self, resp, tx):
+        response_dict = json.loads(resp.text)
+        response_json = resp.json()
         
-        # ~ resp = requests.post('https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.environment == 'test' else ''), 
-        # ~ headers = {'Authorization': 'Bearer %s' % tx.acquirer_id.swedbankpay_key , 'Content-Type': 'application/json' },
-        # ~ data=data)
-        resp = requests.post('https://api.externalintegration.payex.com/psp/creditcard/payments', 
-        headers = {'Authorization': 'Bearer 86eb07f6e313598322ed5651861940679befcaba772f9b13916e74ff4fa67b67', 'Content-Type': 'application/json' },
-        data=data)
-        _logger.warn("8. resp = %s \n\n\n" % resp )
-        _logger.warn("8. http.request %s '%s' \n\n\n" % (resp.status_code, resp.text ) )
+        # Payment has attribute operations..
+        if response_json.get('operations', False):
+            return {"ok": True, "error_message" : '', "problems": {}}
 
-# ~ int(sum(tx.sale_order_ids.mapped('amount_tax')) * 100 )
+        if resp.status_code != 200:
+            problems = response_dict.get("problems", False)
 
-        # ~ if resp.status_code != 201:
-            # ~ raise Warning('code %s :: message %s' % (resp.status_code, resp.text ))
-
-        _logger.warn("9. http.request \n\n\n" )
-
-        if resp:
-
-            responseDict = json.loads(resp.text)
-            _logger.warn('SWEDBANKPAY: %s' % responseDict)
-
-            if not resp.status_code:
-                _logger.warn("Error when contacting Swedbank Pay! Didn't get a status. %s %s" % (resp.status_code, resp.text ))
-                return '1. Error when contacting Swedbank Pay!'
-            tx.state_message = '%s' % responseDict.get('payment')
-            if resp.status_code != 201:
-                _logger.warn("Error when contacting Swedbank Pay! We did get an error code. %s %s" % (resp.status_code, resp.text))
-                return '2. Error when contacting SwedbankPay!'
-
-            if not responseDict.get('payment', {}).get('number'):
-                _logger.warn("Error when contacting Swedbank Pay! Didn't get an order reference. %s" % responseDict.get('payment'))
-                return '3. Error when contacting Swedbank Pay!'
-            tx.acquirer_reference = responseDict.get('payment', {}).get('number')
-
-            if not responseDict.get('operations', [{},{}])[1].get('href'):
-                _logger.warn("Error when contacting Swedbank Pay! Didn't get a redirect url.%s" % responseDict)
-                return '4. Error when contacting Swedbank Pay!'
-            return werkzeug.utils.redirect(responseDict.get('operations', [{},{}])[1].get('href'), 302)
-
-    # ~ @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
-    # ~ def init_payment2(self, **post):
-        # ~ _logger.warn("\n\n\n\n\n\n Hej \n\n\n\n\n\n")
-
-
-
-
-
+            if not problems:
+                return {"ok": False, "error_message" : 'Swedbankpay server is not aviable right now', "problems": {}}
+            else:
+                return {"ok": False, "error_message": 'Transaction failed', "problems": problems} 
+        else:
+            return {"ok": True, "error_message" : '', "problems": {}}
