@@ -26,6 +26,7 @@ from odoo.http import request
 import werkzeug
 import requests
 import json
+<<<<<<< HEAD
 #/usr/share/core-odoo/addons/website_sale/controllers/main.py
 from odoo.addons.website_sale.controllers.main import WebsiteSale
 from odoo.addons.sale.controllers.product_configurator import ProductConfiguratorController
@@ -33,6 +34,10 @@ from odoo.addons.payment.controllers.portal import PaymentProcessing
 
 
 
+=======
+
+ 
+>>>>>>> payment_swedbankpay: Large refactoring
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -46,11 +51,15 @@ import pprint
 # /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation 
 
 
+<<<<<<< HEAD
 class SwedbankPayController(WebsiteSale):
 
     @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
     def swedbankpay_validate(self, **post):
         return "hello there"
+=======
+class SwedbankPayController(http.Controller):
+>>>>>>> payment_swedbankpay: Large refactoring
 
     # is called if user directly decline the payment in the redirect link 
     @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
@@ -155,7 +164,11 @@ class SwedbankPayController(WebsiteSale):
         sale_order = request.env['sale.order'].search([
             ('id','=',str(sale_order_id))
         ])
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> payment_swedbankpay: Large refactoring
         values['amount_tax'] = sale_order.amount_tax
         values['amount'] = sale_order.amount_total
         
@@ -165,7 +178,11 @@ class SwedbankPayController(WebsiteSale):
 
         # TODO: 
         # Problem with these sometimes fields, they get updated if i restart/update the module.
+<<<<<<< HEAD
         # There is an "noupdate" on the data fields. 
+=======
+        # There is an "noupdate" on the data fields.  
+>>>>>>> payment_swedbankpay: Large refactoring
         values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
         values['bearer'] = swedbank_pay.swedbankpay_account_nr
         
@@ -224,6 +241,7 @@ class SwedbankPayController(WebsiteSale):
             else:
                 return {"ok": False, "error_message": 'Transaction failed', "problems": problems} 
         else:
+<<<<<<< HEAD
             return {"ok": True, "error_message" : '', "problems": {}}
 
 
@@ -284,3 +302,6 @@ class SwedbankPayController(WebsiteSale):
         request.session['__website_sale_last_tx_id'] = transaction.id
 
         return True
+=======
+            return {"ok": True, "error_message" : '', "problems": {}}
+>>>>>>> payment_swedbankpay: Large refactoring
