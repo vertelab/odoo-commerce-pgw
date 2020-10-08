@@ -131,11 +131,16 @@ class AcquirerSwish(models.Model):
         return super(AcquirerSwish, self).write(values)
 
 
+
     @api.model
     def create_swish_payment(self, tx_val):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
 
-        callback_url = base_url.replace('http', 'https') + '/payment/swish'
+        callback_url = base_url + '/payment/swish'
+
+        if not 'https' in callback_url:
+            callback_url = base_url.replace('http', 'https')
+
         _logger.warn("~ create_swish_payment callback_url: %s" %  callback_url)
 
         currency = tx_val['currency'].name
