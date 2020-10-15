@@ -1,0 +1,15 @@
+<!-- PAYMENT ADYEN TEMPLATES -->
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--Inspired by payment_adyen_templates.xml -->
+    <data noupdate="1">
+        <template id="swish_acquirer_button">
+            <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
+            <!-- URLs -->
+            <input type="hidden" name='swish_callback_url'
+                t-att-value="swish_callback_url"/>
+            <input type="hidden" name='swish_return_url'
+                t-att-value="return_url"/>
+        </template>
+    </data>
+</odoo>
