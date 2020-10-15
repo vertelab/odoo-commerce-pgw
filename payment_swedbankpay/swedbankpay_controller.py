@@ -111,6 +111,7 @@ class SwedbankPayController(WebsiteSale):
 
         resp = requests.post(swedbankpay_url, headers=headers, data=data)
         
+<<<<<<< HEAD
         response_validation = self.check_response(resp, transaction_id)
         if not (response_validation["ok"]):
             _logger.warning("~~ ERORRS! ~~~")
@@ -175,6 +176,24 @@ class SwedbankPayController(WebsiteSale):
 
     def format_payment_request(self, values):
         return json.dumps({
+=======
+    # @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
+    # ~ @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
+    def init_payment(self, **post):
+        """
+        Contact Swedbank Pay and redirect customer.
+        """
+        _logger.warn("1. Hello world!!! \n\n\n\n")
+        tx = request.env['payment.transaction'].sudo().browse(request.session.get('sale_transaction_id', []))
+        _logger.warn("2. Hello world!!! TX = %s \n\n\n" % tx )
+        if not tx:
+            werkzeug.utils.redirect('/shop/payment', 302)
+        # ~ request.post
+        # ~ SWEDBANK PAY CODE DOCUMENTATION
+        # ~ https://developer.swedbankpay.com/payments/card/redirect
+
+        data = json.dumps({
+>>>>>>> payment_swish: Try out to use urls in swish_generate_values
             "payment": {
                 "operation": "Purchase",
                 "intent": "Authorization",
