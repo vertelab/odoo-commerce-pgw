@@ -54,6 +54,7 @@ class AcquirerSwish(models.Model):
     # I dont know where we should such fields yet...
     # Can we even store files in fields?
 
+    # prefix for cert files and so on....
     current_folder = os.path.dirname(os.path.abspath(__file__))
     cert_file_path = os.path.join(current_folder, "cert.pem")
     key_file_path = os.path.join(current_folder, "key.pem")
@@ -68,9 +69,13 @@ class AcquirerSwish(models.Model):
 
         # Important to note, the transaction reference is gotten from these values
         swish_tx_values = dict(values)
-        
+        swish_tx_values.update({
+            'swish_callback_url': '/payment/swish', # maybe needs base_url ?
+            'return_url': '/payment/swish/return',
+            'tx_url': '/payment/swish/tx_url'
+        })    
         # self.create_swish_payment(values)
-        _logger.warn("~ %s " % "swish_from_generate_values")
+        # _logger.warn("~ %s " % "swish_from_generate_values")
         
         # Bypass controller answer test transaction instead...
         # self.create_fake_swish_call(values)
@@ -84,7 +89,7 @@ class AcquirerSwish(models.Model):
         """Returns the url of the button form."""
         # Should use this custom swish later ?
         # return '/payment/swish/initPayment'
-        return '/payment/process'
+        return '/payment/swish/tx_url'
     
     @api.multi
     def swish_compute_fees(self, amount, currency_id, country_id):
@@ -115,10 +120,8 @@ class AcquirerSwish(models.Model):
         """ Hook in create to create a default post_msg. This is done in create
         to have access to the name and other creation values. If no post_msg
         or a void post_msg is given at creation, generate a default one. """
-        _logger.warn("~ CREATE AQUirer!!! ")
 
         if values.get('provider') == 'swish' and not values.get('post_msg'):
-            _logger.warn("~ CREATE post msg get!!! ")
             values['post_msg'] = self._format_transfer_data()
         return super(AcquirerSwish, self).create(values)
 
@@ -141,7 +144,7 @@ class AcquirerSwish(models.Model):
         if not 'https' in callback_url:
             callback_url = base_url.replace('http', 'https')
 
-        _logger.warn("~ create_swish_payment callback_url: %s" %  callback_url)
+        # _logger.warn("~ create_swish_payment callback_url: %s" %  callback_url)
 
         currency = tx_val['currency'].name
         payer_alias = str(tx_val['partner_phone']).replace(' ','').replace('-','').replace('+','')
@@ -180,7 +183,8 @@ class AcquirerSwish(models.Model):
     @api.model
     def create_fake_swish_call(self, tx_val):
         callback_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/payment/swish'
-        _logger.warn("~ callback_url %s" %  callback_url)
+        # _logger.warn("~ callback_url %s" %  callback_url)
+        
         payer_alias = str(tx_val['partner_phone']).replace(' ','').replace('-','').replace('+','')
 
         
@@ -233,7 +237,7 @@ class TxPayex(models.Model):
     # (the reference value is passed through _form_generate_values function)
     @api.model
     def _swish_form_get_tx_from_data(self, data):
-        _logger.warn('~ _swish_form_get_tx_from_data  REFERENCE: %s  ' % data['payeePaymentReference'])        
+        # _logger.warn('~ _swish_form_get_tx_from_data  REFERENCE: %s  ' % data['payeePaymentReference'])        
         reference = data['payeePaymentReference']
         if not reference:
             error_msg = 'Swish: received data with missing reference (%s)' % reference
@@ -254,7 +258,7 @@ class TxPayex(models.Model):
     # If there is any invalid_parameters the next function will not be executed.
     @api.model
     def _swish_form_get_invalid_parameters(self, data):
-        _logger.warn(" ~ _swish_form_get_invalid_parameters %s " % "None!")
+        # _logger.warn(" ~ _swish_form_get_invalid_parameters %s " % "None!")
 
         invalid_parameters = []
         if not data['status']:
@@ -276,7 +280,7 @@ class TxPayex(models.Model):
             
     @api.model
     def _swish_form_validate(self, data):
-        _logger.warn("~ _swish_form_validate  %s" % data )
+        # _logger.warn("~ _swish_form_validate  %s" % data )
 
         status = data['status']
         former_tx_state = self.state
@@ -289,14 +293,14 @@ class TxPayex(models.Model):
         if status in ['PAID']:
             try:
                 date = dateutil.parser.parse(data['datePaid']).astimezone(pytz.utc)
-                _logger.warn("~ %s" % date)
+                # _logger.warn("~ %s" % date)
             except:
                 date = fields.Datetime.now()
 
             res.update(date=date)
             self._set_transaction_done()
             if self.state == 'done' and self.state != former_tx_state:
-                _logger.info('~ Validated swish payment for tx %s: set as done' % (self.reference))
+                # _logger.info('~ Validated swish payment for tx %s: set as done' % (self.reference))
                 return self.write(res)
         
             _logger.warn("~ %s" % "End of swish validate returns true")  

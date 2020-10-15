@@ -101,7 +101,7 @@ class SwedbankPayController(http.Controller):
         _logger.warn("Error when contacting Swedbank Pay! Didn't get a response.\n%s" % response)
         return '7. Error when contacting Swedbank Pay!'
         
-    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
+    # @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
     # ~ @http.route('/payment/swedbankpay/initPayment', type='http', auth='public', method='POST')
     def init_payment(self, **post):
         """
