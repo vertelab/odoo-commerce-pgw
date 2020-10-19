@@ -33,6 +33,7 @@
                 'payment_acquirer.xml',
                 'swedbankpay_data.xml',
                 'res_cnfig_view.xml',
+                'swedbankpay_button_replacer.xml'
         ],
         'installable': True,
 }

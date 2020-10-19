@@ -26,8 +26,13 @@ from odoo.http import request
 import werkzeug
 import requests
 import json
+#/usr/share/core-odoo/addons/website_sale/controllers/main.py
+from odoo.addons.website_sale.controllers.main import WebsiteSale
+from odoo.addons.sale.controllers.product_configurator import ProductConfiguratorController
+from odoo.addons.payment.controllers.portal import PaymentProcessing
 
- 
+
+
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +46,11 @@ import pprint
 # /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation 
 
 
-class SwedbankPayController(http.Controller):
+class SwedbankPayController(WebsiteSale):
+
+    @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
+    def swedbankpay_validate(self, **post):
+        return "hello there"
 
     # is called if user directly decline the payment in the redirect link 
     @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
@@ -72,9 +81,19 @@ class SwedbankPayController(http.Controller):
         """
 
         return "test"        
+
     
-    @http.route('/shop/payment/transaction', type='json', auth='public', method='POST') ## Alternative link. Plan B.
-    def init_payment_to_aqcuirer(self, **post):        
+    @http.route(['/shop/payment/transaction/swedbankpay',
+        '/shop/payment/transaction/swedbankpay/<int:so_id>',
+        '/shop/payment/transaction/swedbankpay/<int:so_id>/<string:access_token>'], type='json', auth="public", website=True)
+    def init_transaction_to(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
+        _logger.warning("~ swedbankpay lol")
+
+        # Create the actual transaction...
+        payment_transaction_created = self.payment_transaction(acquirer_id, save_token, so_id, access_token, token, **kwargs)
+        if(payment_transaction_created):
+            _logger.warning("~ payment_transaction_created ")
+
         swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
 
         sale_order_id =  request.session.get('sale_order_id', -1)
@@ -112,7 +131,10 @@ class SwedbankPayController(http.Controller):
             # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
             tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
 
+            return werkzeug.utils.redirect('/shop/payment/validate', 302)
             
+    
+    ### Helper functions...
 
     def get_payment_values(self, transaction_id, sale_order_id):
         tx = request.env['payment.transaction'].search([
@@ -133,7 +155,7 @@ class SwedbankPayController(http.Controller):
         sale_order = request.env['sale.order'].search([
             ('id','=',str(sale_order_id))
         ])
-        
+
         values['amount_tax'] = sale_order.amount_tax
         values['amount'] = sale_order.amount_total
         
@@ -143,7 +165,7 @@ class SwedbankPayController(http.Controller):
 
         # TODO: 
         # Problem with these sometimes fields, they get updated if i restart/update the module.
-        # There is an "noupdate" on the data fields.  
+        # There is an "noupdate" on the data fields. 
         values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
         values['bearer'] = swedbank_pay.swedbankpay_account_nr
         
@@ -203,3 +225,62 @@ class SwedbankPayController(http.Controller):
                 return {"ok": False, "error_message": 'Transaction failed', "problems": problems} 
         else:
             return {"ok": True, "error_message" : '', "problems": {}}
+
+
+    # Copied from core controller /payment/core/
+    def payment_transaction(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
+        """ Json method that creates a payment.transaction, used to create a
+        transaction when the user clicks on 'pay now' button. After having
+        created the transaction, the event continues and the user is redirected
+        to the acquirer website.
+
+        :param int acquirer_id: id of a payment.acquirer record. If not set the
+                                user is redirected to the checkout page
+        """
+        # Ensure a payment acquirer is selected
+        if not acquirer_id:
+            return False
+
+        try:
+            acquirer_id = int(acquirer_id)
+        except:
+            return False
+
+        # Retrieve the sale order
+        if so_id:
+            env = request.env['sale.order']
+            domain = [('id', '=', so_id)]
+            if access_token:
+                env = env.sudo()
+                domain.append(('access_token', '=', access_token))
+            order = env.search(domain, limit=1)
+        else:
+            order = request.website.sale_get_order()
+
+        # Ensure there is something to proceed
+        if not order or (order and not order.order_line):
+            return False
+
+        assert order.partner_id.id != request.website.partner_id.id
+
+        # Create transaction
+        vals = {'acquirer_id': acquirer_id,
+                'return_url': '/shop/payment/validate'}
+
+        if save_token:
+            vals['type'] = 'form_save'
+        if token:
+            vals['payment_token_id'] = int(token)
+
+        transaction = order._create_payment_transaction(vals)
+
+        # store the new transaction into the transaction list and if there's an old one, we remove it
+        # until the day the ecommerce supports multiple orders at the same time
+        last_tx_id = request.session.get('__website_sale_last_tx_id')
+        last_tx = request.env['payment.transaction'].browse(last_tx_id).sudo().exists()
+        if last_tx:
+            PaymentProcessing.remove_payment_transaction(last_tx)
+        PaymentProcessing.add_payment_transaction(transaction)
+        request.session['__website_sale_last_tx_id'] = transaction.id
+
+        return True
