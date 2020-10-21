@@ -39,7 +39,6 @@ class SwishController(http.Controller):
     @http.route('/payment/swish', type='json', auth='none', method='POST', csrf=False)
     def swish_callback(self, **post): 
         data = json.loads(request.httprequest.data)
-        # _logger.warn("~ ~ ~~~~~ ~~~ %s " % data)
         _logger.warn("~ %s /payment/swish (swish_callback) " % request.session)
                     
         # Form feedback also calls the functions 
@@ -50,14 +49,7 @@ class SwishController(http.Controller):
 
         if(transaction_registered):
             _logger.warn("~ Transaction was sucessfully registered")
-            return werkzeug.utils.redirect('/payment/swish/test_route', 302)
-            
-    # We can hijack this route from core-odoo, do the same stuff that are done there, then redirect???
-    @http.route('/shop/payment', type='json', auth="public", website=True, sitemap=False)
-    def paymnet(self, **post):
-        _logger.warn("~ ~ ~ shop payment ~~~")
-        # return request.
-            
+            return werkzeug.utils.redirect('/payment/swish/test_route', 302)            
             
     @http.route('/payment/swish/return', auth='public')
     def swish_return(self, **post):
@@ -73,18 +65,3 @@ class SwishController(http.Controller):
     def test_route(self, **post):
         _logger.warning("~ hello there? ")
         return "<h3>hej</h3>"
-        
-    
-    # Default tx_url ?
-    # @http.route('/payment/process', type='json', auth='none', method='POST', website=True)
-    
-    # This crashes somestuff... if multiple aquirers is used. 
-    # @http.route('/shop/payment/transaction', type='json', auth='public', method='POST')
-    # def send_swish_payment(self, **post):
-    #     _logger.warn("~ %s /shop/payment/transaction (send_swish_payment) " % request.session)
-    #     _logger.warn("~ %s" % request.session.session_token)
-    #     return werkzeug.utils.redirect('http://www.google.com', 302)
-
-
-
-    

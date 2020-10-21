@@ -31,7 +31,6 @@
         'depends': ['payment'],
         'data': ['swish.xml',
                 'payment_acquirer.xml',
-                'swish_template.xml',
                 'swish_data.xml',
                 'res_cnfig_view.xml',
         ],
