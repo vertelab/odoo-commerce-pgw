@@ -66,20 +66,20 @@ class SwishController(WebsiteSale):
             return werkzeug.utils.redirect('/payment/swish/test_route', 302)
 
     # Taken directly from core..
-    @http.route('/shop/payment', auth='public', website=True, sitemap=False)
-    def my_shop(self, **post):
-        order = request.website.sale_get_order()
+    # @http.route('/shop/payment', auth='public', website=True, sitemap=False)
+    # def my_shop(self, **post):
+    #     order = request.website.sale_get_order()
         
-        redirection = self.checkout_redirection(order)
+    #     redirection = self.checkout_redirection(order)
         
-        render_values = self._get_shop_payment_values(order, **post)
-        render_values['only_services'] = order and order.only_services or False
+    #     render_values = self._get_shop_payment_values(order, **post)
+    #     render_values['only_services'] = order and order.only_services or False
 
-        if render_values['errors']:
-            render_values.pop('acquirers', '')
-            render_values.pop('tokens', '')
+    #     if render_values['errors']:
+    #         render_values.pop('acquirers', '')
+    #         render_values.pop('tokens', '')
 
-        return request.render("website_sale.payment", render_values)
+    #     return request.render("website_sale.payment", render_values)
 
     # Routes that does not work
     # @http.route('/payment/swish/return', auth='public')

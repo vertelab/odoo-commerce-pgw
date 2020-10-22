@@ -80,17 +80,85 @@ class SwedbankPayController(WebsiteSale):
         so that you can receive the state of the transaction.
         """
 
-        return "test"        
+        return "test"
 
     
-    @http.route(['/shop/payment/transaction/swedbankpay',
-        '/shop/payment/transaction/swedbankpay/<int:so_id>',
-        '/shop/payment/transaction/swedbankpay/<int:so_id>/<string:access_token>'], type='json', auth="public", website=True)
-    def init_transaction_to(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
-        _logger.warning("~ swedbankpay lol")
+    @http.route(['/payment/swedbankpay/testing'], type='json', auth='public', website=True)
+    def testing(self, acquirer_id, **post):
+        swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay")])
 
+        payment_transaction_created = self.payment_transaction(swedbankpay_acquirer.id)
+        if(payment_transaction_created["sucess"]):
+            _logger.warning("~ payment_transaction_created ")
+        
+        swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
+
+        sale_order_id =  request.session.get('sale_order_id', -1)
+        transaction_id = payment_transaction_created["transaction_id"]
+
+        values = self.get_payment_values(transaction_id,sale_order_id)
+        data = self.format_payment_request(values)
+
+        headers = {
+            'Authorization': 'Bearer %s' % values['bearer'], 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+
+        # Write out what is happening...
+
+        resp = requests.post(swedbankpay_url, headers=headers, data=data)
+        
+        response_validation = self.check_response(resp, transaction_id)
+        if not (response_validation["ok"]):
+            _logger.warning("~~ ERORRS! ~~~")
+            _logger.warning("~  ERROR MESSAGE: %s " % response_validation["error_message"])
+            _logger.warning("~  PROBLEMS: %s " % response_validation["problems"])
+            _logger.warning("~  PAYMENT VALUES: %s " % values)
+            return response_validation["error_message"] # does this return work?!
+        else: 
+            _logger.warning("~~~~~~~~~~~~~~~~~~~~")
+
+            redirect_url = self.get_redirect_url(resp.json()['operations'])
+            _logger.warning("~ ----> redirect_url %s " % redirect_url)
+            
+            tx = request.env['payment.transaction'].search([
+                ('id','=', transaction_id)
+            ])
+
+            # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
+            tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
+
+            # svara med en redirect url...
+            return werkzeug.utils.redirect('/shop/payment/validate', 302)
+        
+        return "message from payment/swedbankpay"
+
+    
+    # All the arguments is not needed for the jsonRPC call i make...
+    @http.route(['/payment/transaction/swedbankpay'], type='json', auth="public", website=True)
+    def init_transaction_to(self, acquirer_id=None, save_token=False, so_id=None, access_token=None, token=None, **post):
+
+        _logger.warning("~ /payment/transaction/swedbankpay %s " % post)
+
+        json_acquirer_id = post.get('acquirer_id', None)
+        if json_acquirer_id == None:
+            return "Could not get aquirer_id"
+
+        json_so_id = post.get('so_id', None)
+        if json_so_id == None:
+            return "Could not get so_id"
+
+            
         # Create the actual transaction...
-        payment_transaction_created = self.payment_transaction(acquirer_id, save_token, so_id, access_token, token, **kwargs)
+        _logger.warning("~ /shop/payment/transaction/swedbankpay %s %s ~ ", (json_acquirer_id, json_so_id))
+
+        _logger.warning("~ request sale_order_id %s %s ~ ", (request.session.get('sale_order_id', -1), request.session['__website_sale_last_tx_id']))
+
+        return "hej"
+
+
+        payment_transaction_created = self.payment_transaction(json_acquirer_id, json_so_id, so_id, access_token, token, **post)
         if(payment_transaction_created):
             _logger.warning("~ payment_transaction_created ")
 
@@ -131,6 +199,7 @@ class SwedbankPayController(WebsiteSale):
             # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
             tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
 
+            # svara med en redirect url...
             return werkzeug.utils.redirect('/shop/payment/validate', 302)
             
     
@@ -138,7 +207,7 @@ class SwedbankPayController(WebsiteSale):
 
     def get_payment_values(self, transaction_id, sale_order_id):
         tx = request.env['payment.transaction'].search([
-            ('id','=', transaction_id)
+            ('id','=', str(transaction_id))
         ])
         
         values = {}
@@ -238,12 +307,12 @@ class SwedbankPayController(WebsiteSale):
         """
         # Ensure a payment acquirer is selected
         if not acquirer_id:
-            return False
+            return {"sucess": False, "transaction_id": -1}
 
         try:
             acquirer_id = int(acquirer_id)
         except:
-            return False
+            return {"sucess": False, "transaction_id": -1}
 
         # Retrieve the sale order
         if so_id:
@@ -258,7 +327,7 @@ class SwedbankPayController(WebsiteSale):
 
         # Ensure there is something to proceed
         if not order or (order and not order.order_line):
-            return False
+            return {"sucess": False, "transaction_id": -1}
 
         assert order.partner_id.id != request.website.partner_id.id
 
@@ -282,4 +351,4 @@ class SwedbankPayController(WebsiteSale):
         PaymentProcessing.add_payment_transaction(transaction)
         request.session['__website_sale_last_tx_id'] = transaction.id
 
-        return True
+        return {"sucess": True, "transaction_id": str(transaction.id)}
