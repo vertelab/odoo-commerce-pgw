@@ -7,13 +7,21 @@
                 <!-- <input type="hidden" name="name" t-att-value="partner_values['name']" /> -->
                 <!-- <input type="hidden" name="email" t-att-value="partner_values['email']" /> -->
                 <!-- submit -->
-                <button type="submit" width="100px" t-att-class="submit_class">
+                <button type="submit" width="600px" t-att-class="submit_class">
                     <img t-if="not submit_txt" src="/payment_swish/static/src/img/swish_icon.png" />
                     <span t-if="submit_txt">
                         <t t-esc="submit_txt" />
                         <span class="fa fa-long-arrow-right" />
                     </span>
                 </button>
+
+                <script type="text/javascript">
+                    odoo.define(function (require){
+                        var ajax = require('web.ajax');
+                        ajax.loadJS("/payment_swish/static/src/js/swish.js");
+                    });
+                </script> 
+
             </form>
         </template>
         <template id="swish_form">
@@ -36,6 +44,7 @@
                 <input t-if="Swd_returnreject" type="hidden" name='Swd_returnreject'
                     t-att-value="Swd_returnreject"/>
                 <input type="hidden" name='add_returndata' t-att-value="add_returndata"/>
+                <input type="hidden" name="swish_test" t-att-value='swish_test'/>
             </div>
         </template>
     </data>

@@ -72,7 +72,8 @@ class AcquirerSwish(models.Model):
         swish_tx_values.update({
             'swish_callback_url': '/payment/swish', # maybe needs base_url ?
             'return_url': '/payment/swish/return',
-            'tx_url': '/payment/swish/tx_url'
+            'tx_url': '/payment/swish/tx_url',
+            'swish_test': "THIS IS A SWISH TEST"
         })    
         # self.create_swish_payment(values)
         # _logger.warn("~ %s " % "swish_from_generate_values")
@@ -133,22 +134,16 @@ class AcquirerSwish(models.Model):
             values['post_msg'] = self._format_transfer_data()
         return super(AcquirerSwish, self).write(values)
 
-
-
     @api.model
     def create_swish_payment(self, tx_val):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-
         callback_url = base_url + '/payment/swish'
 
         if not 'https' in callback_url:
             callback_url = base_url.replace('http', 'https')
 
-        # _logger.warn("~ create_swish_payment callback_url: %s" %  callback_url)
-
         currency = tx_val['currency'].name
         payer_alias = str(tx_val['partner_phone']).replace(' ','').replace('-','').replace('+','')
-
         current_folder = os.path.dirname(os.path.abspath(__file__))
         cert_file_path = os.path.join(current_folder, "cert.pem")
         key_file_path = os.path.join(current_folder, "key.pem")
@@ -166,10 +161,6 @@ class AcquirerSwish(models.Model):
         amount_str = str(tx_val['amount']).split(".")
         amount_str[1] = amount_str[1][0:2]
         amount_final = float(str(amount_str[0]) + "." + str(amount_str[1]))
-
-
-        _logger.warning("~ %s" % str(amount_final))
-
 
         swish_payment = swish_client.create_payment(
             payee_payment_reference = tx_val['reference'], # This reference is used in the transaction!

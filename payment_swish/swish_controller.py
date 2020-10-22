@@ -23,6 +23,8 @@ from odoo import models, fields, api, _
 from odoo.exceptions import Warning
 from odoo import http
 from odoo.http import request
+from odoo.addons.website_sale.controllers.main import WebsiteSale 
+
 import werkzeug
 import requests
 import json
@@ -31,10 +33,22 @@ from swish import client
 from swish import environment
 import swish as sw
 
+from odoo import fields, http, tools, _
+from odoo.http import request
+from odoo.addons.base.models.ir_qweb_fields import nl2br
+from odoo.addons.http_routing.models.ir_http import slug
+from odoo.addons.payment.controllers.portal import PaymentProcessing
+from odoo.addons.website.controllers.main import QueryURL
+from odoo.exceptions import ValidationError
+from odoo.addons.website.controllers.main import Website
+from odoo.addons.sale.controllers.product_configurator import ProductConfiguratorController
+from odoo.addons.website_form.controllers.main import WebsiteForm
+from odoo.osv import expression
+
 import logging
 _logger = logging.getLogger(__name__)
 
-class SwishController(http.Controller):
+class SwishController(WebsiteSale):
     # Should we use website=False in the decorator?
     @http.route('/payment/swish', type='json', auth='none', method='POST', csrf=False)
     def swish_callback(self, **post): 
@@ -49,19 +63,24 @@ class SwishController(http.Controller):
 
         if(transaction_registered):
             _logger.warn("~ Transaction was sucessfully registered")
-            return werkzeug.utils.redirect('/payment/swish/test_route', 302)            
-            
-    @http.route('/payment/swish/return', auth='public')
-    def swish_return(self, **post):
-        _logger.warning("~ /payment/swish/return: RETURN URL ACTIVATED")
-        return 'RETURN HELLO'
+            return werkzeug.utils.redirect('/payment/swish/test_route', 302)
+
+    # Taken directly from core..
+    @http.route('/shop/payment', auth='public', website=True, sitemap=False)
+    def my_shop(self, **post):
+        order = request.website.sale_get_order()
         
-    @http.route('/payment/swish/tx_url', auth='public')
-    def swish_tx_url(self, **post): 
-        _logger.warning("~ /payment/swish/tx_url TX TX URL")
+        redirection = self.checkout_redirection(order)
         
-        
-    @http.route('/payment/swish/test_route', auth='public', website=True)
-    def test_route(self, **post):
-        _logger.warning("~ hello there? ")
-        return "<h3>hej</h3>"
+        render_values = self._get_shop_payment_values(order, **post)
+        render_values['only_services'] = order and order.only_services or False
+
+        if render_values['errors']:
+            render_values.pop('acquirers', '')
+            render_values.pop('tokens', '')
+
+        return request.render("website_sale.payment", render_values)
+
+    # Routes that does not work
+    # @http.route('/payment/swish/return', auth='public')
+    # @http.route('/payment/swish/test_route', auth='public', website=True)
