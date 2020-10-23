@@ -37,4 +37,39 @@
 
     </xpath>
   </template>
+
+  <template id="verify_good" name="Verify template">
+      <t t-call="portal.frontend_layout">
+            <div class="wrap">
+                <div class="container o_website_payment">
+                    <div class="o_payment_processing">
+                        <div class="row">
+                            <div class="o_payment_processing_content col-sm-6 col-sm-offset-3">
+                              <p>Your order is now payed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </t>
+  </template>
+
+
+  <template id="verify_bad" name="Verify bad template">
+      <t t-call="portal.frontend_layout">
+            <div class="wrap">
+                <div class="container o_website_payment">
+                    <div class="o_payment_processing">
+                        <div class="row">
+                            <div class="o_payment_processing_content col-sm-6 col-sm-offset-3">
+                              <p>Your order is now payed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </t>
+  </template>
+
+
 </odoo>

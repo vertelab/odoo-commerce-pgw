@@ -77,6 +77,10 @@ odoo.define('payment_swedbankpay.swedbankpay', function (require) {
             so_id: "so_id_test"
         }).then(function(data) {
             console.log(`~then=${data}`);
+            if(data!=="false"){
+                window.location.href = data;
+                window.location.replace(data);
+            }
             // data will have the redirection url here.
         }).done(function(data) {
             console.log(`~done=${data}`);
