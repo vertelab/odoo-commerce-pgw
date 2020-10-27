@@ -67,10 +67,6 @@ class SwedbankPayController(WebsiteSale):
     # Use the unique id that was sent in  values["complete_url"] 
     @http.route('/payment/swedbankpay/verify/<transaction_id>', type='http', auth='public', method='POST', website=True, sitemap=False)
     def auth_payment(self, transaction_id ,**post):
-
-        _logger.warning("~ paramater %s" % post)
-        _logger.warning(transaction_id)
-
         # Use this later, but i need more data got sale_order_ids and so on
         #tx = request.env['payment.transaction'].browse(transaction_id)
 
@@ -81,8 +77,6 @@ class SwedbankPayController(WebsiteSale):
 
         if not tx:
             return "no transaction found"
-
-        _logger.warning("~ VERIFY URI   %s " % tx.swedbankpay_transaction_uri)
         
         # Get payment values beacuse we need 
         values = self.get_payment_values(tx.id ,tx.sale_order_ids[0])
@@ -93,37 +87,48 @@ class SwedbankPayController(WebsiteSale):
             'Accept': 'application/json'
         }
 
-        _logger.warning("~ Verify headers %s " % headers)
-
         validation_url = "https://api.externalintegration.payex.com" + tx.swedbankpay_transaction_uri
 
         resp = requests.get(validation_url, headers=headers)
 
-        _logger.warning("~ verify resp.status_code %s " % resp.status_code)
         if not resp.status_code == 200 :
-            return "Could not get status from transaction lalala..."
-
-
-        _logger.warning("~ json content state %s" %  resp.json()["payment"]["state"])
-        _logger.warning("~ request sesh %s " % request.session )
+            return "Could not get status from transaction..."
 
         if resp.json()["payment"]["state"] == "Ready":
             
             # Check if transaction is payed....
             operation = self.get_operation(operation_to_get="paid-payment", operations=resp.json()['operations'])
-            _logger.warning("~ operation %s " % operation)
-
+                        
             paid_payment = requests.get(operation["href"], headers=headers)
-            if paid_payment == 200:
+            
+            if paid_payment.status_code == 200:
                 # Set transaction is done, this is inspired by the 
+                _logger.warning("~ paid_payment == 200")
                 tx._set_transaction_done()
             
             _logger.warning("~ paid_payment %s" % paid_payment.__dict__)
 
+            _logger.warning("~ request.sesion %s " % request.session)
+
             # TODO :This check does not work yet, needs to 
-            # self.payment_validate(transaction_id=transaction_id, sale_order_id=tx.sale_order_ids[0])           
+            self.remove_context(transaction_id=transaction_id) #, sale_order_id=tx.sale_order_ids[0])
+            sale_order_id = request.session.get('sale_last_order_id')
+            order = request.env['sale.order'].sudo().browse(sale_order_id)
             
-            return request.render("payment_swedbankpay.verify_good")
+            # order.state = "sent"
+            # order.action_draft() 
+        
+            # state = fields.Selection([
+            #     ('draft', 'Quotation'),
+            #     ('sent', 'Quotation Sent'),
+            #     ('sale', 'Sales Order'),
+            #     ('done', 'Locked'),
+            #     ('cancel', 'Cancelled'),
+            #     ]
+
+
+            self.remove_sale_order_from_session()
+            return request.render("website_sale.confirmation", {'order': order})
 
             # Process the transaction for real...
             # added_payment_transaction = PaymentProcessing.add_payment_transaction(tx)
@@ -157,10 +162,6 @@ class SwedbankPayController(WebsiteSale):
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-
-
-        # Write out what is happening...
-
 
         resp = requests.post(swedbankpay_url, headers=headers, data=data)
         
@@ -268,6 +269,7 @@ class SwedbankPayController(WebsiteSale):
         for operation in operations:
             if str(operation['rel']) == "redirect-authorization":
                 return operation['href']
+
 
     def get_operation(self, operation_to_get,  operations):
         for operation in operations:
@@ -391,3 +393,17 @@ class SwedbankPayController(WebsiteSale):
 
         PaymentProcessing.remove_payment_transaction(tx)
         return request.redirect('/shop/confirmation')
+
+    # This the check of the payment is done earlier in our code...
+    # this function is only done for.... write something smart...
+    def remove_context(self, transaction_id=None):
+        tx = request.env['payment.transaction'].sudo().browse(transaction_id)
+        request.website.sale_reset()
+        remove_tx = PaymentProcessing.remove_payment_transaction(tx)
+
+    def remove_sale_order_from_session(self): 
+        request.session.pop("sale_order_id")
+        request.session.pop("sale_last_order_id")
+        request.session.pop("website_sale_current_pl")
+        request.session.pop("__payment_tx_ids__")
+        request.session.pop("__website_sale_last_tx_id")
