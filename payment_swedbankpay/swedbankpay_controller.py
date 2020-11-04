@@ -28,7 +28,7 @@ import requests
 import json
 #/usr/share/core-odoo/addons/website_sale/controllers/main.py
 from odoo.addons.website_sale.controllers.main import WebsiteSale
-from odoo.addons.sale.controllers.product_configurator import ProductConfiguratorController
+# from odoo.addons.sale.controllers.product_conffigurator import ProductConfiguratorController # remove me 
 from odoo.addons.payment.controllers.portal import PaymentProcessing
 
 

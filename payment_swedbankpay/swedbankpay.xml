@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+    <!-- web button -->
         <template id="swedbankpay_acquirer_button">
             <form t-att-action="tx_url" method="post" target="_self">
                 <input id="acquirer_swedbankpay" type="hidden" name="acquirer" t-att-value="acquirer.id"/>

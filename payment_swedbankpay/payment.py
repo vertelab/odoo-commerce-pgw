@@ -85,7 +85,6 @@ Valid view types – And valid purchaseOperation for those views:
     swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
     swedbankpay_key = "example_swedbank_paykey_artur_example"
 
-    @api.multi
     def swedbankpay_form_generate_values(self, values):
         _logger.warn("~ %s " % "swedbankpay_form_generate_values")
         base_url = request.httprequest.url_root
@@ -125,13 +124,11 @@ Valid view types – And valid purchaseOperation for those views:
 
 
     # TODO: Dont know if this can be used 
-    @api.multi
     def swedbankpay_get_form_action_url(self):
         """Returns the url of the button form."""
         return '/payment/swedbankpay/initPayment'
     
-    """TODO: Compute fees?"""    
-    @api.multi
+    #TODO: Compute fees?   
     def swedbankpay_compute_fees(self, amount, currency_id, country_id):
         self.ensure_one()
         if not self.fees_active:
@@ -148,7 +145,6 @@ class TxSwedbankPay(models.Model):
         if ref:
             return self.env['payment.transaction'].search([('acquirer_reference', '=', ref)])
     
-    @api.model
     def _swedbankpay_form_get_invalid_parameters(self, tx, data):
         invalid_parameters = []
         status = data.get('status')
@@ -164,14 +160,11 @@ class TxSwedbankPay(models.Model):
             invalid_parameters.append(('transactionStatus', 'None', 'A value'))
         return invalid_parameters
     
-    @api.model
     def _swedbankpay_form_validate(self, tx, data):
         if data.get('transactionStatus') not in ['0', '3']:
             return False
         return tx.write({'state': 'done', 'date_validate': fields.Datetime.now()})
 
-    # ? 
-    @api.model
     def swedbankpay_create(self, values):
         #acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])
         return values
