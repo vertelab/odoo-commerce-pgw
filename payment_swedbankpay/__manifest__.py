@@ -28,7 +28,7 @@
         'author': 'Vertel AB',
         'license': 'AGPL-3',
         'website': 'http://www.vertel.se',
-        'depends': ['payment'],
+        'depends': ['payment',"website_sale"],
         'data': ['swedbankpay.xml',
                 'payment_acquirer.xml',
                 'swedbankpay_data.xml',
