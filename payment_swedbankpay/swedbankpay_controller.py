@@ -44,6 +44,9 @@ import pprint
 # An other way is to "hjiack" the core-odoo controllers and "extend" them, 
 # check the routes in the controller /usr/share/core-odoo/addons/website_sale/controllers/main.py  
 # /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation 
+#
+# Testdata
+# https://developer.swedbankpay.com/resources/test-data
 
 
 class SwedbankPayController(WebsiteSale):
