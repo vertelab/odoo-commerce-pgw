@@ -78,6 +78,10 @@ class SwedbankPayController(WebsiteSale):
         # Use this later, but i need more data got sale_order_ids and so on
         #tx = request.env['payment.transaction'].browse(transaction_id)
 
+        _logger.warning("~ hej verify")
+        _logger.warning(" ~ request.sess %s " % request.session)
+        _logger.warning(" ~ request.sale_last %s " % request.session["sale_order_id"])
+
 
         tx = request.env['payment.transaction'].search([
             ('id','=', transaction_id)
@@ -88,7 +92,11 @@ class SwedbankPayController(WebsiteSale):
         #resp = requests.post(), 
         
         # Get payment values beacuse we need 
-        values = self.get_payment_values(tx.id ,tx.sale_order_ids[0])
+        #if not tx.sale_order_ids:
+        #   return "should redirect user somewhere else, no sale_order_id on transaction"
+
+        #values = self.get_payment_values(tx.id ,tx.sale_order_ids[0])
+        values = self.get_payment_values(tx.id, request.session["sale_order_id"])
 
         headers = {
             'Authorization': 'Bearer %s' % values['bearer'], 
@@ -96,13 +104,13 @@ class SwedbankPayController(WebsiteSale):
             'Accept': 'application/json'
         }
 
-        valudation_url = 'https://api.%spayex.com' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '') + tx.swedbankpay_transaction_uri
+        validation_url = ('https://api.%spayex.com' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '')) + tx.swedbankpay_transaction_uri
         # validation_url = "https://api.externalintegration.payex.com" + tx.swedbankpay_transaction_uri
 
         resp = requests.get(validation_url, headers=headers)
-        _logger.info('swedbankpay validation_url {validation_url} headers {headers} resp.status {resp_status} resp.json {resp_json}'.format(
-                    validation_url=validation_url,headers=headers,
-                    resp_status=resp.status,resp_json=resp.json()))
+        # _logger.info('swedbankpay validation_url {validation_url} headers {headers} resp.status {resp_status} resp.json {resp_json}'.format(
+        #             validation_url=validation_url,headers=headers,
+        #             resp_status=resp.status,resp_json=resp.json()))
 
         if not resp.status_code == 200 :
             return "Could not get status from transaction..."
@@ -117,7 +125,7 @@ class SwedbankPayController(WebsiteSale):
             if paid_payment.status_code == 200:
                 # Set transaction is done, this is inspired by the 
                 _logger.warning("~ paid_payment == 200")
-                tx._set_transaction_done()
+                tx.sudo()._set_transaction_done()
             
             _logger.warning("~ paid_payment %s" % paid_payment.__dict__)
 
@@ -142,7 +150,16 @@ class SwedbankPayController(WebsiteSale):
 
             # self.remove_sale_order_from_session()
             # TODO: Return an xml template, that says thank you for the order.
-            order.write({'state':'sent'})
+            
+            # order.write({'state':'sale'})
+            order.action_confirm()
+
+            try:
+                order._send_order_confirmation_mail()
+            except Exception:
+                return request.render("payment_swedbankpay.verify_bad")
+            request.website.sale_reset()
+
             # return request.render("payment_swedbankpay.verify_good",{order.})
             return request.render("website_sale.confirmation", {'order': order})
 
@@ -241,6 +258,7 @@ class SwedbankPayController(WebsiteSale):
         values['reference'] = tx.id
 
         sale_order_id = request.session.get('sale_order_id', -1)
+        # _logger.warning('sandra %s' % request.session.get('sale_order_id', -1))
         
         sale_order = request.env['sale.order'].sudo().search([
             ('id','=',str(sale_order_id))
