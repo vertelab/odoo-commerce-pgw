@@ -48,6 +48,14 @@ import pprint
 
 class SwedbankPayController(WebsiteSale):
 
+
+    @http.route('/shop/payment/token', type='http', auth='public', website=True, sitemap=False)
+    def payment_token_hjiack():
+        _logger.warning("~~~hej")
+        return request.redirect('/payment/swedbankpay/testing')
+
+        
+
     @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
     def swedbankpay_validate(self, **post):
         return "hello there"
@@ -77,6 +85,7 @@ class SwedbankPayController(WebsiteSale):
 
         if not tx:
             return "no transaction found"
+        #resp = requests.post(), 
         
         # Get payment values beacuse we need 
         values = self.get_payment_values(tx.id ,tx.sale_order_ids[0])
@@ -87,9 +96,13 @@ class SwedbankPayController(WebsiteSale):
             'Accept': 'application/json'
         }
 
-        validation_url = "https://api.externalintegration.payex.com" + tx.swedbankpay_transaction_uri
+        valudation_url = 'https://api.%spayex.com' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '') + tx.swedbankpay_transaction_uri
+        # validation_url = "https://api.externalintegration.payex.com" + tx.swedbankpay_transaction_uri
 
         resp = requests.get(validation_url, headers=headers)
+        _logger.info('swedbankpay validation_url {validation_url} headers {headers} resp.status {resp_status} resp.json {resp_json}'.format(
+                    validation_url=validation_url,headers=headers,
+                    resp_status=resp.status,resp_json=resp.json()))
 
         if not resp.status_code == 200 :
             return "Could not get status from transaction..."
@@ -127,7 +140,10 @@ class SwedbankPayController(WebsiteSale):
             #     ]
 
 
-            self.remove_sale_order_from_session()
+            # self.remove_sale_order_from_session()
+            # TODO: Return an xml template, that says thank you for the order.
+            order.write({'state':'sent'})
+            # return request.render("payment_swedbankpay.verify_good",{order.})
             return request.render("website_sale.confirmation", {'order': order})
 
             # Process the transaction for real...
@@ -140,17 +156,22 @@ class SwedbankPayController(WebsiteSale):
 
     
 
-    
-    @http.route(['/payment/swedbankpay/testing'], type='json', auth='public', website=True)
-    def testing(self, acquirer_id, **post):
+    # TODO: Change name
+    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True)
+    def testing(self, **post):
         swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay")])
         sale_order_id =  request.session.get('sale_order_id', -1)
 
-        payment_transaction_created = self.payment_transaction(swedbankpay_acquirer.id, so_id=sale_order_id)
+        payment_transaction_created = self.swedbankpay_payment_transaction(swedbankpay_acquirer.id, so_id=sale_order_id)
         if(payment_transaction_created["sucess"]):
-            _logger.warning("~ payment_transaction_created ")
+            _logger.warning("swedbankpay ~ payment_transaction_created ")
+        else:
+            _logger.warning("swedbankpay ~ not payment_transaction_created %s" % payment_transaction_created)
         
-        swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
+        tx = request.env['payment.transaction'].browse(int(payment_transaction_created["transaction_id"]))
+
+        swedbankpay_url = 'https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '')
+        # swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
 
         transaction_id = payment_transaction_created["transaction_id"]
 
@@ -172,14 +193,16 @@ class SwedbankPayController(WebsiteSale):
             _logger.warning("~  PROBLEMS: %s " % response_validation["problems"])
             _logger.warning("~  PAYMENT VALUES: %s " % values)
             # Should return something like this response_validation["error_message"]
-            return "false"
+            # return "false"
+            return request.render("payment_swedbankpay.verify_bad_transaction", {"message": '%s %s %s' % (response_validation["error_message"],response_validation["problems"],values)})
+
         else: 
             _logger.warning("~~~~~~~~~~~~~~~~~~~~")
 
             redirect_url = self.get_redirect_url(resp.json()['operations'])
             _logger.warning("~ ----> redirect_url %s " % redirect_url)
             
-            tx = request.env['payment.transaction'].search([
+            tx = request.env['payment.transaction'].sudo().search([
                 ('id','=', transaction_id)
             ])
 
@@ -191,7 +214,9 @@ class SwedbankPayController(WebsiteSale):
 
 
             # svara med en redirect url...
-            return redirect_url #werkzeug.utils.redirect('/shop/payment/validate', 302)
+            # return redirect_url
+            _logger.warning("~~~~ %s" % redirect_url)
+            return werkzeug.utils.redirect(redirect_url)
         
         return "message from payment/swedbankpay"
 
@@ -205,6 +230,7 @@ class SwedbankPayController(WebsiteSale):
         _logger.warning("~ get payment values %s " % tx.id)
         
         values = {}
+        # TODO: Support multiple websites by using website configurations parameter instead 
         values['base_url'] = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
         values['currency_name'] = request.env['res.currency'].search([
             ("id","=",str(tx.currency_id.id))
@@ -216,7 +242,7 @@ class SwedbankPayController(WebsiteSale):
 
         sale_order_id = request.session.get('sale_order_id', -1)
         
-        sale_order = request.env['sale.order'].search([
+        sale_order = request.env['sale.order'].sudo().search([
             ('id','=',str(sale_order_id))
         ])
         values['amount_tax'] = sale_order.amount_tax
@@ -232,6 +258,9 @@ class SwedbankPayController(WebsiteSale):
         # There is an "noupdate" on the data fields. 
         values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
         values['bearer'] = swedbank_pay.swedbankpay_account_nr
+
+
+        _logger.warning(values)
         
         values["complete_url"] = '%s/payment/swedbankpay/verify/%s' % (values['base_url'], values['reference'])  
         return values
@@ -302,7 +331,7 @@ class SwedbankPayController(WebsiteSale):
 
 
     # Copied from core controller /payment/core/
-    def payment_transaction(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
+    def swedbankpay_payment_transaction(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
         """ Json method that creates a payment.transaction, used to create a
         transaction when the user clicks on 'pay now' button. After having
         created the transaction, the event continues and the user is redirected
@@ -313,14 +342,15 @@ class SwedbankPayController(WebsiteSale):
         """
         # Ensure a payment acquirer is selected
         if not acquirer_id:
-            return {"sucess": False, "transaction_id": -1}
+            return {"sucess": False, "transaction_id": -1, 'message': 'not acquirer_id %s' % acquirer_id}
 
         try:
             acquirer_id = int(acquirer_id)
         except:
-            return {"sucess": False, "transaction_id": -1}
+            return {"sucess": False, "transaction_id": -1, 'message': 'try int acquirer_id %s' % acquirer_id}
 
         # Retrieve the sale order
+        domain = []
         if so_id:
             env = request.env['sale.order']
             domain = [('id', '=', so_id)]
@@ -331,9 +361,12 @@ class SwedbankPayController(WebsiteSale):
         else:
             order = request.website.sale_get_order()
 
+        if not order:
+            order = request.website.sale_get_order()
+            
         # Ensure there is something to proceed
         if not order or (order and not order.order_line):
-            return {"sucess": False, "transaction_id": -1}
+            return {"sucess": False, "transaction_id": -1, 'message': 'not order  %{order} so_id {so_id} domain {domain} {get_order}'.format(order=order,so_id=so_id,domain=domain,get_order=request.website.sale_get_order())}
 
         assert order.partner_id.id != request.website.partner_id.id
 

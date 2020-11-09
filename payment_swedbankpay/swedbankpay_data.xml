@@ -8,7 +8,11 @@
             <field name="company_id" ref="base.main_company" />
             <field name="view_template_id" ref="swedbankpay_form" />
             <field name="sequence">2</field>
+            <field name="module_id">1</field>
+            <field name="module_state">installed</field>
             <field name="description" type="html">
+            <!-- USE THIS FIELD TO SAY THAT THIS THIS IS NOT INSTALLED!!!! -->
+            
                 <p>
                     SWEDBANKPAY.
                 </p>
