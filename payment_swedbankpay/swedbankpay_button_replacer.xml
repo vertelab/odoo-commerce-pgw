@@ -5,10 +5,13 @@
         <div>
           <script type="text/javascript">
             odoo.define(function (require){
-              console.log("~ outside");
+              
+              // Hjiack the website sale flow when pressing on "Pay now" button  
+              $(".o_payment_form").attr("action", "/payment/swedbankpay/testing");
 
-              var ajax = require('web.ajax');
-              ajax.loadJS("/payment_swedbankpay/static/src/js/swedbankpay.js");
+              // If js-file needs to be load it dinamically instead.
+              // var ajax = require('web.ajax');
+              // ajax.loadJS("/payment_swedbankpay/static/src/js/swedbankpay.js");
             });
           </script> 
         </div>

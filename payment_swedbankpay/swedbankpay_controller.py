@@ -176,8 +176,8 @@ class SwedbankPayController(WebsiteSale):
 
     
 
-    # TODO: Change name
-    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True)
+    # TODO: Change name, this is the controller that initialize the payment
+    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False )
     def testing(self, **post):
         swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay")])
         sale_order_id =  request.session.get('sale_order_id', -1)
@@ -214,7 +214,7 @@ class SwedbankPayController(WebsiteSale):
             _logger.warning("~  PAYMENT VALUES: %s " % values)
             # Should return something like this response_validation["error_message"]
             # return "false"
-            return request.render("payment_swedbankpay.verify_bad_transaction", {"message": '%s %s %s' % (response_validation["error_message"],response_validation["problems"],values)})
+            return request.render("payment_swedbankpay.verify_bad_transaction", {"message": '%s' % (response_validation["error_message"])})
 
         else: 
             _logger.warning("~~~~~~~~~~~~~~~~~~~~")
@@ -330,6 +330,9 @@ class SwedbankPayController(WebsiteSale):
 
 
     def check_response(self, resp, tx):
+        _logger.warning("~ 1 %s" % resp.status_code)
+        _logger.warning("~ 2 %s" % resp.__dict__)
+
         if resp.status_code == 401:
             return {"ok": False, "error_message" : 'Swedbankpay server is not aviable right now', "problems": {}}
 

@@ -126,7 +126,7 @@ Valid view types – And valid purchaseOperation for those views:
     # TODO: Dont know if this can be used 
     def swedbankpay_get_form_action_url(self):
         """Returns the url of the button form."""
-        return '/payment/swedbankpay/initPayment'
+        return '/payment/swedbankpay/testing'
     
     #TODO: Compute fees?   
     def swedbankpay_compute_fees(self, amount, currency_id, country_id):
