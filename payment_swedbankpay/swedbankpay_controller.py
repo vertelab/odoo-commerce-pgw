@@ -50,14 +50,10 @@ import pprint
 
 
 class SwedbankPayController(WebsiteSale):
-
-
     @http.route('/shop/payment/token', type='http', auth='public', website=True, sitemap=False)
     def payment_token_hjiack():
         _logger.warning("~~~hej")
         return request.redirect('/payment/swedbankpay/testing')
-
-        
 
     @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
     def swedbankpay_validate(self, **post):
@@ -73,22 +69,16 @@ class SwedbankPayController(WebsiteSale):
         _logger.warning("~ callback %s" % post)
         return "payment callbacked!"
 
-
-
     # Use the unique id that was sent in  values["complete_url"] 
     @http.route('/payment/swedbankpay/verify/<transaction_id>', type='http', auth='public', method='POST', website=True, sitemap=False)
     def auth_payment(self, transaction_id ,**post):
         # Use this later, but i need more data got sale_order_ids and so on
         #tx = request.env['payment.transaction'].browse(transaction_id)
-
-        _logger.warning("~ hej verify")
+        _logger.warning(" ~ auth_payment")
         _logger.warning(" ~ request.sess %s " % request.session)
         _logger.warning(" ~ request.sale_last %s " % request.session["sale_order_id"])
 
-
-        tx = request.env['payment.transaction'].search([
-            ('id','=', transaction_id)
-        ])
+        tx = request.env['payment.transaction'].search([('id','=', transaction_id)])  
 
         if not tx:
             return "no transaction found"
@@ -122,14 +112,14 @@ class SwedbankPayController(WebsiteSale):
             
             # Check if transaction is payed....
             operation = self.get_operation(operation_to_get="paid-payment", operations=resp.json()['operations'])
-                        
+            
             paid_payment = requests.get(operation["href"], headers=headers)
             
             if paid_payment.status_code == 200:
                 # Set transaction is done, this is inspired by the 
                 _logger.warning("~ paid_payment == 200")
                 tx.sudo()._set_transaction_done()
-            
+    
             _logger.warning("~ paid_payment %s" % paid_payment.__dict__)
 
             _logger.warning("~ request.sesion %s " % request.session)
@@ -149,7 +139,6 @@ class SwedbankPayController(WebsiteSale):
             #     ('done', 'Locked'),
             #     ('cancel', 'Cancelled'),
             #     ]
-
 
             # self.remove_sale_order_from_session()
             # TODO: Return an xml template, that says thank you for the order.
@@ -171,19 +160,19 @@ class SwedbankPayController(WebsiteSale):
             # if added_payment_transaction:
             #    return PaymentProcessing.payment_status_page(PaymentProcessing)
             # return "added_payment_transaction failed" 
-
-        return request.render("payment_swedbankpay.verify_bad")
-
-    
+            
+        else:
+            _logger.warn("~ Now we render payment_swedbankpay.verify_bad but are incorrectly redirected to another view immediatley following")
+            return request.render("payment_swedbankpay.verify_bad")
 
     # TODO: Change name, this is the controller that initialize the payment
     @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False )
     def testing(self, **post):
         swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay")])
-        sale_order_id =  request.session.get('sale_order_id', -1)
+        sale_order_id = request.session.get('sale_order_id', -1)
 
         payment_transaction_created = self.swedbankpay_payment_transaction(swedbankpay_acquirer.id, so_id=sale_order_id)
-        if(payment_transaction_created["sucess"]):
+        if payment_transaction_created["sucess"]:
             _logger.warning("swedbankpay ~ payment_transaction_created ")
         else:
             _logger.warning("swedbankpay ~ not payment_transaction_created %s" % payment_transaction_created)
@@ -226,12 +215,10 @@ class SwedbankPayController(WebsiteSale):
                 ('id','=', transaction_id)
             ])
 
-
             # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
             tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
 
             _logger.warning("~ TX-> %s" % tx.read())
-
 
             # svara med en redirect url...
             # return redirect_url
@@ -240,52 +227,40 @@ class SwedbankPayController(WebsiteSale):
         
         return "message from payment/swedbankpay"
 
-    
     #######  Helper functions...
     def get_payment_values(self, transaction_id, sale_order_id):
-        tx = request.env['payment.transaction'].search([
-            ('id','=', str(transaction_id))
-        ])
-
-        _logger.warning("~ get payment values %s " % tx.id)
+        _logger.warn("~ getting transaction with id %s " % transaction_id)
+        transaction = request.env['payment.transaction'].search([('id', '=', str(transaction_id))])
+        transaction.ensure_one()
         
-        values = {}
+        _logger.warn('~ getting sale order with id %s' % sale_order_id)
+        sale_order = request.env['sale.order'].sudo().search([('id', '=', str(sale_order_id))])
+        sale_order.ensure_one()
+        
+        swedbank_pay = request.env['payment.acquirer'].sudo().search([('id', '=', str(transaction.acquirer_id.id))])
+        swedbank_pay.ensure_one()
+        
         # TODO: Support multiple websites by using website configurations parameter instead 
+        values = {}
         values['base_url'] = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        values['currency_name'] = request.env['res.currency'].search([
-            ("id","=",str(tx.currency_id.id))
-        ]).name
+        values['currency_name'] = request.env['res.currency'].search([("id","=",str(transaction.currency_id.id))]).name
         
         # Use value that is unique, otherwise a returning customer cant be used... 
         # Used to use acquirer_reference, but it returned false... wierd...
-        values['reference'] = tx.id
-
-        sale_order_id = request.session.get('sale_order_id', -1)
-        # _logger.warning('sandra %s' % request.session.get('sale_order_id', -1))
-        
-        sale_order = request.env['sale.order'].sudo().search([
-            ('id','=',str(sale_order_id))
-        ])
+        values['reference'] = transaction.id
         values['amount_tax'] = sale_order.amount_tax
         values['amount'] = sale_order.amount_total
         
-        
-        swedbank_pay = request.env['payment.acquirer'].sudo().search([
-            ('id','=',str(tx.acquirer_id.id))
-        ])
-
-        # TODO: 
-        # Problem with these sometimes fields, they get updated if i restart/update the module.
-        # There is an "noupdate" on the data fields. 
+        # TODO: Problem with these sometimes fields, they get updated if i restart/update the module.
+        # There is an "noupdate" on the data fields.
         values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
         values['bearer'] = swedbank_pay.swedbankpay_account_nr
-
 
         _logger.warning(values)
         
         values["complete_url"] = '%s/payment/swedbankpay/verify/%s' % (values['base_url'], values['reference'])  
+        
         return values
-
 
     def format_payment_request(self, values):
         return json.dumps({
@@ -314,12 +289,10 @@ class SwedbankPayController(WebsiteSale):
             }
         })
 
-
     def get_redirect_url(self, operations):
         for operation in operations:
             if str(operation['rel']) == "redirect-authorization":
                 return operation['href']
-
 
     def get_operation(self, operation_to_get,  operations):
         for operation in operations:
@@ -327,14 +300,12 @@ class SwedbankPayController(WebsiteSale):
                 return operation
         return None
 
-
-
     def check_response(self, resp, tx):
         _logger.warning("~ 1 %s" % resp.status_code)
         _logger.warning("~ 2 %s" % resp.__dict__)
 
         if resp.status_code == 401:
-            return {"ok": False, "error_message" : 'Swedbankpay server is not aviable right now', "problems": {}}
+            return {"ok": False, "error_message" : 'Swedbankpay server is not available right now', "problems": {}}
 
         response_dict = json.loads(resp.text)
         response_json = resp.json()
@@ -347,12 +318,11 @@ class SwedbankPayController(WebsiteSale):
             problems = response_dict.get("problems", False)
 
             if not problems:
-                return {"ok": False, "error_message" : 'Swedbankpay server is not aviable right now', "problems": {}}
+                return {"ok": False, "error_message" : 'Swedbankpay server is not available right now', "problems": {}}
             else:
                 return {"ok": False, "error_message": 'Transaction failed', "problems": problems} 
         else:
             return {"ok": True, "error_message" : '', "problems": {}}
-
 
     # Copied from core controller /payment/core/
     def swedbankpay_payment_transaction(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
@@ -415,7 +385,6 @@ class SwedbankPayController(WebsiteSale):
         request.session['__website_sale_last_tx_id'] = transaction.id
 
         return {"sucess": True, "transaction_id": str(transaction.id)}
-
 
     def payment_validate(self, transaction_id=None, sale_order_id=None, **post):
         """ Method that should be called by the server when receiving an update
