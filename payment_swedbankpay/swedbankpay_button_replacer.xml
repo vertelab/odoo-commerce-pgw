@@ -76,6 +76,26 @@
             </div>
             </t>
   </template>
+  
+<!--
+  This is without <div class="o_payment_processing">, which messes up the error message displayed when the fourth 
+  incorrect attempt is made with 3D Secure.
+-->
+    <template id="verify_bad_2" name="Verify bad template">
+      <t t-call="portal.frontend_layout">
+            <div class="wrap">
+                <div class="container o_website_payment">
+                    <div class="o_payment_processing">
+                        <div class="row">
+                            <div class="o_payment_processing_content col-sm-6 col-sm-offset-3">
+                                <p> Din betalning har blivit nekad. Försök gärna igen </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </t>
+  </template>
 
   <template id="verify_bad_transaction" name="Verify bad template">
         <t t-call="portal.frontend_layout">

@@ -162,8 +162,7 @@ class SwedbankPayController(WebsiteSale):
             # return "added_payment_transaction failed" 
             
         else:
-            _logger.warn("~ Now we render payment_swedbankpay.verify_bad but are incorrectly redirected to another view immediatley following")
-            return request.render("payment_swedbankpay.verify_bad")
+            return request.render("payment_swedbankpay.verify_bad_2")
 
     # TODO: Change name, this is the controller that initialize the payment
     @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False )
@@ -203,7 +202,7 @@ class SwedbankPayController(WebsiteSale):
             _logger.warning("~  PAYMENT VALUES: %s " % values)
             # Should return something like this response_validation["error_message"]
             # return "false"
-            return request.render("payment_swedbankpay.verify_bad_transaction", {"message": '%s' % (response_validation["error_message"])})
+            return request.render("payment_swedbankpay.verify_bad", {"message": '%s' % (response_validation["error_message"])})
 
         else: 
             _logger.warning("~~~~~~~~~~~~~~~~~~~~")
