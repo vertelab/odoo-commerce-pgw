@@ -167,7 +167,7 @@ class SwedbankPayController(WebsiteSale):
     # TODO: Change name, this is the controller that initialize the payment
     @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False )
     def testing(self, **post):
-        swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay")])
+        swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay"),("state","in",["enabled","test"])])
         sale_order_id = request.session.get('sale_order_id', -1)
 
         payment_transaction_created = self.swedbankpay_payment_transaction(swedbankpay_acquirer.id, so_id=sale_order_id)
@@ -230,14 +230,14 @@ class SwedbankPayController(WebsiteSale):
     def get_payment_values(self, transaction_id, sale_order_id):
         _logger.warn("~ getting transaction with id %s " % transaction_id)
         transaction = request.env['payment.transaction'].search([('id', '=', str(transaction_id))])
-        transaction.ensure_one()
+        # transaction.ensure_one()
         
         _logger.warn('~ getting sale order with id %s' % sale_order_id)
         sale_order = request.env['sale.order'].sudo().search([('id', '=', str(sale_order_id))])
-        sale_order.ensure_one()
+        # sale_order.ensure_one()
         
         swedbank_pay = request.env['payment.acquirer'].sudo().search([('id', '=', str(transaction.acquirer_id.id))])
-        swedbank_pay.ensure_one()
+        # swedbank_pay.ensure_one()
         
         # TODO: Support multiple websites by using website configurations parameter instead 
         values = {}

@@ -78,21 +78,21 @@ odoo.define('payment_swedbankpay.swedbankpay', function (require) {
 
         // call to
         // '/shop/payment/transaction/swedbankpay/<int:so_id>', (with sale_order_id)
-        this._rpc('/payment/swedbankpay/testing', {
-            acquirer_id: "TESTING",
-            so_id: "so_id_test"
-        }).then(function(data) {
-            console.log(`~then=${data}`);
-            if(data!=="false"){
-                window.location.href = data;
-                window.location.replace(data);
-            }
-            // data will have the redirection url here.
-        }).done(function(data) {
-            console.log(`~done=${data}`);
-        });
+        //~ this._rpc('/payment/swedbankpay/testing', {
+            //~ acquirer_id: "TESTING",
+            //~ so_id: "so_id_test"
+        //~ }).then(function(data) {
+            //~ console.log(`~then=${data}`);
+            //~ if(data!=="false"){
+                //~ window.location.href = data;
+                //~ window.location.replace(data);
+            //~ }
+            //~ // data will have the redirection url here.
+        //~ }).done(function(data) {
+            //~ console.log(`~done=${data}`);
+        //~ });
     }
 
-    console.log("~ start mutation!");
-    observer.observe(document.body, {childList: true});
+    //~ console.log("~ start mutation!");
+    //~ observer.observe(document.body, {childList: true});
 });
