@@ -64,9 +64,12 @@ class SwedbankPayController(WebsiteSale):
     def swedbankpay_cancel(self, **post): 
         return "payment canceled!"
 
-    @http.route('/payment/swedbankpay/callback', type='http', auth='none', csrf=False)
+    @http.route('/payment/swedbankpay/callback', type='json', auth='none', csrf=False)
     def swedbankpay_callback(self, **post):
         _logger.warning("~ callback %s" % post)
+        # TODO: Use transaction_id as the verify controller does
+        # Use the swedbankpay_transaction_uri to make a post against swedbankpay 
+        # and see what happens...
         return "payment callbacked!"
 
     # Use the unique id that was sent in  values["complete_url"] 
@@ -165,7 +168,7 @@ class SwedbankPayController(WebsiteSale):
             return request.render("payment_swedbankpay.verify_bad_2")
 
     # TODO: Change name, this is the controller that initialize the payment
-    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False )
+    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False, type='http')
     def testing(self, **post):
         swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay"),("state","in",["enabled","test"])])
         sale_order_id = request.session.get('sale_order_id', -1)
