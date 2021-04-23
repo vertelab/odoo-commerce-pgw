@@ -375,7 +375,7 @@ class SwedbankPayController(WebsiteSale):
         if token:
             vals['payment_token_id'] = int(token)
 
-        transaction = order._create_payment_transaction(vals)
+        transaction = order.sudo()._create_payment_transaction(vals)
 
         # store the new transaction into the transaction list and if there's an old one, we remove it
         # until the day the ecommerce supports multiple orders at the same time
