@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="payment_swedbankpay.acquirer_form_swedbankpay" model="ir.ui.view">
+        <record id="acquirer_form_swedbankpay" model="ir.ui.view">
             <field name="name">acquirer.form.swedbankpay</field>
             <field name="model">payment.acquirer</field>
             <field name="inherit_id" ref="payment.acquirer_form" />

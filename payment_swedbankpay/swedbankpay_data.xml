@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="acquirer_form_swedbankpay" model="payment.acquirer">
+        <record id="acquirer_swedbankpay" model="payment.acquirer">
             <field name="name">Swedbank Pay</field>
             <field name="image_128" type="base64" file="payment_swedbankpay/static/src/img/swedbankpay_icon.png" />
             <field name="provider">swedbankpay</field>
