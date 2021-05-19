@@ -88,7 +88,7 @@ Valid view types – And valid purchaseOperation for those views:
     def swedbankpay_form_generate_values(self, values):
         _logger.warn("~ %s " % "swedbankpay_form_generate_values")
         base_url = request.httprequest.url_root
-        
+
         currency_name = self.env['res.currency'].search([
             ("id","=",str(values['currency_id']))
         ]).name
@@ -126,9 +126,9 @@ Valid view types – And valid purchaseOperation for those views:
     # TODO: Dont know if this can be used 
     def swedbankpay_get_form_action_url(self):
         """Returns the url of the button form."""
-        return '/payment/swedbankpay/testing'
-    
-    #TODO: Compute fees?   
+        return '/payment/swedbankpay/init'
+
+    # TODO: Compute fees?
     def swedbankpay_compute_fees(self, amount, currency_id, country_id):
         self.ensure_one()
         if not self.fees_active:
@@ -138,13 +138,14 @@ Valid view types – And valid purchaseOperation for those views:
 class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
     swedbankpay_transaction_uri = fields.Char('Swedbank pay transaction URI')
-    
+
     @api.model
     def _swedbankpay_form_get_tx_from_data(self, data):
         ref = data.get('orderRef') or self._context.get('orderRef')
         if ref:
-            return self.env['payment.transaction'].search([('acquirer_reference', '=', ref)])
-    
+            return self.env['payment.transaction'].search(
+                [('acquirer_reference', '=', ref)])
+
     def _swedbankpay_form_get_invalid_parameters(self, tx, data):
         invalid_parameters = []
         status = data.get('status')
@@ -159,7 +160,7 @@ class TxSwedbankPay(models.Model):
         if not data.get('transactionStatus'):
             invalid_parameters.append(('transactionStatus', 'None', 'A value'))
         return invalid_parameters
-    
+
     def _swedbankpay_form_validate(self, tx, data):
         if data.get('transactionStatus') not in ['0', '3']:
             return False

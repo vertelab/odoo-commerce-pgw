@@ -19,249 +19,276 @@
 #
 ##############################################################################
 
+import json
+import logging
+import pprint
+import requests
+import time
+import werkzeug
+
 from odoo import models, fields, api, _
-from odoo.exceptions import Warning
+from odoo.exceptions import Warning, UserError
 from odoo import http
 from odoo.http import request
-import werkzeug
-import requests
-import json
 #/usr/share/core-odoo/addons/website_sale/controllers/main.py
 from odoo.addons.website_sale.controllers.main import WebsiteSale
-# from odoo.addons.sale.controllers.product_conffigurator import ProductConfiguratorController # remove me 
 from odoo.addons.payment.controllers.portal import PaymentProcessing
 
-
-
-import logging
 _logger = logging.getLogger(__name__)
 
-import pprint
-
-# TODO: 
+# TODO:
 # Do some type of redirect, either use odoos or use an button for redirection (new snippet) that calls on controllers here.
 
-# An other way is to "hjiack" the core-odoo controllers and "extend" them, 
-# check the routes in the controller /usr/share/core-odoo/addons/website_sale/controllers/main.py  
-# /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation 
+# An other way is to "hjiack" the core-odoo controllers and "extend" them,
+# check the routes in the controller /usr/share/core-odoo/addons/website_sale/controllers/main.py
+# /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation
 #
 # Testdata
 # https://developer.swedbankpay.com/resources/test-data
 
 
 class SwedbankPayController(WebsiteSale):
-    @http.route('/shop/payment/token', type='http', auth='public', website=True, sitemap=False)
-    def payment_token_hjiack():
-        _logger.warning("~~~hej")
-        return request.redirect('/payment/swedbankpay/testing')
 
     @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
     def swedbankpay_validate(self, **post):
+        _logger.warning("\n"*2 + "~"*25 + 'Validate' + '~'*25)
+        _logger.warning(post)
         return "hello there"
 
     # is called if user directly decline the payment in the redirect link 
-    @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
-    def swedbankpay_cancel(self, **post): 
-        return "payment canceled!"
+    @http.route('/payment/swedbankpay/cancel/<transaction_id>', type='http', auth='none', csrf=False)
+    def swedbankpay_cancel(self, transaction_id, **post):
+        _logger.info("\n"*2 + "~"*25 + 'Cancel' + '~'*25)
+        _logger.info(f'Cancel of transaction id: {transaction_id}')
+        tx = request.env['payment.transaction'].sudo().search([('id', '=', transaction_id)])
+        tx.state = 'cancel'
+        return werkzeug.utils.redirect(f'{request.httprequest.host_url}shop')
 
-    @http.route('/payment/swedbankpay/callback', type='json', auth='none', csrf=False)
-    def swedbankpay_callback(self, **post):
-        _logger.warning("~ callback %s" % post)
-        # TODO: Use transaction_id as the verify controller does
-        # Use the swedbankpay_transaction_uri to make a post against swedbankpay 
-        # and see what happens...
+    @http.route('/payment/swedbankpay/callback/<transaction_id>', type='json', auth='none', csrf=False, method='POST')
+    def swedbankpay_callback(self, transaction_id, **post):
+        _logger.info("\n"*2 + "~"*25 + f"Callback" + "~"*25)
+        _logger.info(f'Transaction id: {transaction_id}')
+        # As Swedbank data is not within a params key it will not be
+        # added to kw args, we need to get it from requests instead.
+        data = json.loads(request.httprequest.data)
+        uri = data.get('transaction', {}).get('id')
+        tx = request.env['payment.transaction'].sudo().search([('id', '=', transaction_id)])
+        assert tx.provider == 'swedbankpay'
+
+        # Verify that the URI we "trust" from SwedbankPay atleast is 
+        # for the same transaction.
+        if not uri.startswith(tx.swedbankpay_transaction_uri):
+            _logger.warning('URI mismatch:\n{uri}\ntx.swedbankpay_transaction_uri')
+            return
+        bearer = tx.acquirer_id.swedbankpay_account_nr
+        headers = {
+            'Authorization': f'Bearer {bearer}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        test = 'externalintegration.' if tx.acquirer_id.state == 'test' else ''
+        validation_url = f'https://api.{test}payex.com' + uri
+
+        for i in range(3):
+            resp = requests.get(validation_url, headers=headers)
+            if resp.status_code == 200:
+                _logger.info('Got response code 200 in callback')
+                break
+            time.sleep(10)
+        else:
+            # Should do something here?
+            _logger.warning('Callback could not get status from transaction')
+            return 'Could not get status from transaction...'
+        resp_data = json.loads(resp.text)
+        auth = resp_data.get('authorization', {})
+        auth_status = auth.get('authenticationStatus')
+        state = auth.get('transaction', {}).get('state')
+        # Successfull transaction
+        if state == 'Completed' and auth_status == 'Y':
+            self.complete_transaction(tx, mail=False)
+        # Failed transaction
+        elif auth_status == 'N':
+            _logger.warning('Payment failed')
+        _logger.warning(auth_status, state)
+
         return "payment callbacked!"
 
     # Use the unique id that was sent in  values["complete_url"] 
     @http.route('/payment/swedbankpay/verify/<transaction_id>', type='http', auth='public', method='POST', website=True, sitemap=False)
-    def auth_payment(self, transaction_id ,**post):
-        # Use this later, but i need more data got sale_order_ids and so on
-        #tx = request.env['payment.transaction'].browse(transaction_id)
-        _logger.warning(" ~ auth_payment")
-        _logger.warning(" ~ request.sess %s " % request.session)
-        _logger.warning(" ~ request.sale_last %s " % request.session["sale_order_id"])
+    def auth_swedbankpay(self, transaction_id ,**post):
+        _logger.warning("\n"*2 + "~"*25 + "auth_swedbankpay" + "~"*25)
+        _logger.warning(f'Transaction id: {transaction_id}')
+        _logger.warning(f'Post: {post}')
+        _logger.warning(f"request.session: {request.session}")
 
-        tx = request.env['payment.transaction'].search([('id','=', transaction_id)])  
+        tx = request.env['payment.transaction'].sudo().search(
+            [('id','=', transaction_id)])
 
         if not tx:
-            return "no transaction found"
-        #resp = requests.post(), 
-        
-        # Get payment values beacuse we need 
-        #if not tx.sale_order_ids:
-        #   return "should redirect user somewhere else, no sale_order_id on transaction"
-
-        #values = self.get_payment_values(tx.id ,tx.sale_order_ids[0])
-        values = self.get_payment_values(tx.id, request.session["sale_order_id"])
+            _logger.warning('Could not find transaction in Auth')
+            return "No transaction found"
+        values = self.get_payment_values(tx)
 
         headers = {
-            'Authorization': 'Bearer %s' % values['bearer'], 
+            'Authorization': f'Bearer {values["bearer"]}',
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
 
-        validation_url = ('https://api.%spayex.com' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '')) + tx.swedbankpay_transaction_uri
-        # validation_url = "https://api.externalintegration.payex.com" + tx.swedbankpay_transaction_uri
+        test = 'externalintegration.' if tx.acquirer_id.state == 'test' else ''
+        validation_url = f'https://api.{test}payex.com' + tx.swedbankpay_transaction_uri
+        _logger.info(f'Validation URL: {validation_url}')
 
-        resp = requests.get(validation_url, headers=headers)
-        # _logger.info('swedbankpay validation_url {validation_url} headers {headers} resp.status {resp_status} resp.json {resp_json}'.format(
-        #             validation_url=validation_url,headers=headers,
-        #             resp_status=resp.status,resp_json=resp.json()))
-
-        if not resp.status_code == 200 :
-            return "Could not get status from transaction..."
+        # Do 3 retries if failing to get correct response.
+        for i in range(3):
+            resp = requests.get(validation_url, headers=headers)
+            if resp.status_code == 200:
+                _logger.info('Transaction status received')
+                break
+            time.sleep(10)
+        else:
+            _logger.warning('Auth could not get status on transaction')
+            return ("Could not get status from transaction...Please wait a few "
+                    "seconds and refresh this page, should the error still be "
+                    "pressent please contact the merchant to manually verify "
+                    "the transaction")
 
         if resp.json()["payment"]["state"] == "Ready":
-            
+            _logger.info('Transaction in state Ready checking payment status')
             # Check if transaction is payed....
-            operation = self.get_operation(operation_to_get="paid-payment", operations=resp.json()['operations'])
-            
-            paid_payment = requests.get(operation["href"], headers=headers)
-            
-            if paid_payment.status_code == 200:
-                # Set transaction is done, this is inspired by the 
-                _logger.warning("~ paid_payment == 200")
-                tx.sudo()._set_transaction_done()
-    
-            _logger.warning("~ paid_payment %s" % paid_payment.__dict__)
+            operation = self.get_operation(
+                operation_to_get="paid-payment",
+                operations=resp.json()['operations'])
 
-            _logger.warning("~ request.sesion %s " % request.session)
+            # Do 3 retries if failing to get correct response.
+            for i in range(3):
+                paid_payment = requests.get(operation["href"], headers=headers)
+                if paid_payment.status_code == 200:
+                    _logger.info(f'Transaction {transaction_id} OK')
+                    break
+                time.sleep(10)
+            else:
+                _logger.warning(f'Failed to verify transaction {transaction_id}')
+                return ('Failed to verify transaction, transaction in an '
+                        'unknown state please contact Merchant to verify '
+                        'status manually')
 
-            # TODO :This check does not work yet, needs to 
-            self.remove_context(transaction_id=transaction_id) #, sale_order_id=tx.sale_order_ids[0])
-            sale_order_id = request.session.get('sale_last_order_id')
-            order = request.env['sale.order'].sudo().browse(sale_order_id)
-            
-            # order.state = "sent"
-            # order.action_draft() 
-        
-            # state = fields.Selection([
-            #     ('draft', 'Quotation'),
-            #     ('sent', 'Quotation Sent'),
-            #     ('sale', 'Sales Order'),
-            #     ('done', 'Locked'),
-            #     ('cancel', 'Cancelled'),
-            #     ]
-
-            # self.remove_sale_order_from_session()
-            # TODO: Return an xml template, that says thank you for the order.
-            
-            # order.write({'state':'sale'})
-            order.action_confirm()
-
+            # Transaction is OK, always return OK status to customer.
             try:
-                order._send_order_confirmation_mail()
-            except Exception:
-                return request.render("payment_swedbankpay.verify_bad")
-            request.website.sale_reset()
+                _logger.info(f'Cleaning up transaction {transaction_id}')
+                request.website.sale_reset()
+                PaymentProcessing.remove_payment_transaction(tx)
+                self.complete_transaction(tx, mail=True)
 
-            # return request.render("payment_swedbankpay.verify_good",{order.})
-            return request.render("website_sale.confirmation", {'order': order})
+            finally:
+                return request.render("website_sale.confirmation", {'order': tx.sale_order_ids})
 
-            # Process the transaction for real...
-            # added_payment_transaction = PaymentProcessing.add_payment_transaction(tx)
-            # if added_payment_transaction:
-            #    return PaymentProcessing.payment_status_page(PaymentProcessing)
-            # return "added_payment_transaction failed" 
-            
+        elif resp.json()['payment']['state'] == "Failed":
+            _logger.warning('Failed to complete payment')
+            tx.state = 'cancel'
+            return request.render("payment_swedbankpay.verify_bad_2", {})
+        elif resp.json()['payment']['state'] == 'Aborted':
+            _logger.warning('Merchant aborted sale before completion')
+            tx.state = 'cancel'
+            return request.render("payment_swedbankpay.aborted", {})
+        elif resp.json()['payment']['state'] == 'Pending':
+            _logger.warning('Transaction in Pending state, please investigate manually')
+            tx.state = 'error'
+            return request.render('payment_swedbankpay.pending', {})
         else:
-            return request.render("payment_swedbankpay.verify_bad_2")
+            _logger.warning('Failed to complete payment in state: '
+                            f'{resp.json()["payment"]["state"]}, '
+                            'this should not happen!')
+            tx.state = 'error'
+            return request.render("payment_swedbankpay.unexpected")
 
     # TODO: Change name, this is the controller that initialize the payment
-    @http.route(['/payment/swedbankpay/testing'], auth='public', website=True, csrf=False, type='http')
-    def testing(self, **post):
-        swedbankpay_acquirer = request.env['payment.acquirer'].search([("provider","=","swedbankpay"),("state","in",["enabled","test"])])
-        sale_order_id = request.session.get('sale_order_id', -1)
+    @http.route(['/payment/swedbankpay/init'], auth='public', website=True, csrf=False, type='http')
+    def init_swedbankpay(self, **post):
+        tx_id = request.session.get('__website_sale_last_tx_id')
+        if not tx_id:
+            _logger.warning('Could not find last transaction')
+            return "No payment transaction found."
+        tx = request.env['payment.transaction'].sudo().browse(tx_id)
 
-        payment_transaction_created = self.swedbankpay_payment_transaction(swedbankpay_acquirer.id, so_id=sale_order_id)
-        if payment_transaction_created["sucess"]:
-            _logger.warning("swedbankpay ~ payment_transaction_created ")
-        else:
-            _logger.warning("swedbankpay ~ not payment_transaction_created %s" % payment_transaction_created)
-        
-        tx = request.env['payment.transaction'].browse(int(payment_transaction_created["transaction_id"]))
+        _logger.info('~' * 25 + 'Init Pay - Swedbankpay' + '~'*25)
 
-        swedbankpay_url = 'https://api.%spayex.com/psp/creditcard/payments' % ('externalintegration.' if tx.acquirer_id.state == 'test' else '')
-        # swedbankpay_url = 'https://api.externalintegration.payex.com/psp/creditcard/payments'
+        test = 'externalintegration.' if tx.acquirer_id.state == 'test' else ''
+        swedbankpay_url = f'https://api.{test}payex.com/psp/creditcard/payments'
+        _logger.info(f'Transaction URL: {swedbankpay_url}')
 
-        transaction_id = payment_transaction_created["transaction_id"]
-
-        values = self.get_payment_values(transaction_id,sale_order_id)
+        values = self.get_payment_values(tx)
         data = self.format_payment_request(values)
+        _logger.info(f'Payment data: {data}')
 
         headers = {
-            'Authorization': 'Bearer %s' % values['bearer'], 
+            'Authorization': f'Bearer {values["bearer"]}',
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
 
         resp = requests.post(swedbankpay_url, headers=headers, data=data)
-        
-        response_validation = self.check_response(resp, transaction_id)
+        _logger.info(f'Swedbank transaction init response: {resp.text}')
+        response_validation = self.check_response(resp)
         if not (response_validation["ok"]):
-            _logger.warning("~~ ERORRS! ~~~")
-            _logger.warning("~  ERROR MESSAGE: %s " % response_validation["error_message"])
-            _logger.warning("~  PROBLEMS: %s " % response_validation["problems"])
-            _logger.warning("~  PAYMENT VALUES: %s " % values)
-            # Should return something like this response_validation["error_message"]
-            # return "false"
-            return request.render("payment_swedbankpay.verify_bad", {"message": '%s' % (response_validation["error_message"])})
-
-        else: 
-            _logger.warning("~~~~~~~~~~~~~~~~~~~~")
+            _logger.warning("~~ ERORR! ~~~")
+            _logger.warning(f'~  ERROR MESSAGE: {response_validation["error_message"]} ')
+            _logger.warning(f'~  PROBLEMS: {response_validation["problems"]}')
+            _logger.warning(f'~  PAYMENT VALUES: {values}')
+            # Change error message here?
+            return request.render(
+                "payment_swedbankpay.verify_bad",
+                {"message": '%s' % (response_validation["error_message"])})
+        else:
+            _logger.info("~"*25 + 'Transaction Init OK' + '~'*25)
 
             redirect_url = self.get_redirect_url(resp.json()['operations'])
-            _logger.warning("~ ----> redirect_url %s " % redirect_url)
-            
-            tx = request.env['payment.transaction'].sudo().search([
-                ('id','=', transaction_id)
-            ])
-
-            # Save the id to make an GET request in  /payment/swedbankpay/verify/<transaction_aquierers_id> route.
+            _logger.info("~ ----> redirect_url %s " % redirect_url)
+            # Save the id to make an GET request in
+            # /payment/swedbankpay/verify/<transaction_aquierers_id> route.
             tx.swedbankpay_transaction_uri = resp.json()['payment']['id']
 
-            _logger.warning("~ TX-> %s" % tx.read())
+            _logger.info("~ TX-> %s" % tx.read())
 
-            # svara med en redirect url...
             # return redirect_url
-            _logger.warning("~~~~ %s" % redirect_url)
+            _logger.info("~~~~ %s" % redirect_url)
             return werkzeug.utils.redirect(redirect_url)
-        
-        return "message from payment/swedbankpay"
 
     #######  Helper functions...
-    def get_payment_values(self, transaction_id, sale_order_id):
-        _logger.warn("~ getting transaction with id %s " % transaction_id)
-        transaction = request.env['payment.transaction'].search([('id', '=', str(transaction_id))])
-        # transaction.ensure_one()
-        
-        _logger.warn('~ getting sale order with id %s' % sale_order_id)
-        sale_order = request.env['sale.order'].sudo().search([('id', '=', str(sale_order_id))])
-        # sale_order.ensure_one()
-        
-        swedbank_pay = request.env['payment.acquirer'].sudo().search([('id', '=', str(transaction.acquirer_id.id))])
-        # swedbank_pay.ensure_one()
-        
+
+    def complete_transaction(self, tx, mail=False):
+        tx.sudo()._set_transaction_done()
+        for order in tx.sale_order_ids:
+            order.action_confirm()
+            if mail:
+                try:
+                    order._send_order_confirmation_mail()
+                except Exception:
+                    _logger.error('Failed to send confirmation mail')
+
+    def get_payment_values(self, tx):
         # TODO: Support multiple websites by using website configurations parameter instead 
         values = {}
-        values['base_url'] = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        values['currency_name'] = request.env['res.currency'].search([("id","=",str(transaction.currency_id.id))]).name
-        
+        url = request.env['ir.config_parameter'].sudo().get_param('web.base.url')
+        values['currency_name'] = tx.currency_id.name
+
         # Use value that is unique, otherwise a returning customer cant be used... 
         # Used to use acquirer_reference, but it returned false... wierd...
-        values['reference'] = transaction.id
-        values['amount_tax'] = sale_order.amount_tax
-        values['amount'] = sale_order.amount_total
-        
+        values['reference'] = tx.id
+        values['amount_tax'] = sum(tx.mapped('sale_order_ids.amount_tax'))
+        values['amount'] = sum(tx.mapped('sale_order_ids.amount_total'))
+        values['description'] = ', '.join(tx.mapped('sale_order_ids.name'))[:40]
+
         # TODO: Problem with these sometimes fields, they get updated if i restart/update the module.
         # There is an "noupdate" on the data fields.
-        values['merchant_id'] = swedbank_pay.swedbankpay_merchant_id
-        values['bearer'] = swedbank_pay.swedbankpay_account_nr
+        values['merchant_id'] = tx.acquirer_id.swedbankpay_merchant_id
+        values['bearer'] = tx.acquirer_id.swedbankpay_account_nr
 
-        _logger.warning(values)
-        
-        values["complete_url"] = '%s/payment/swedbankpay/verify/%s' % (values['base_url'], values['reference'])  
-        
+        ref = values['reference']
+        values["complete_url"] = f'{url}/payment/swedbankpay/verify/{ref}'
+        values['callback_url'] = f'{url}/payment/swedbankpay/callback/{ref}'
+        values['cancel_url'] = f'{url}/payment/swedbankpay/cancel/{ref}'
+
         return values
 
     def format_payment_request(self, values):
@@ -275,14 +302,13 @@ class SwedbankPayController(WebsiteSale):
                     "amount":  int(values['amount'] * 100),
                     "vatAmount": int(values['amount_tax'] * 100), 
                 }],
-                ## TODO: Use better description!
-                "description": "Test Purchase",
+                "description": values['description'],
                 "userAgent": 'USERAGENT=%s' % request.httprequest.user_agent.string,
                 "language": "sv-SE",
                 "urls": {
                     "completeUrl": values['complete_url'],
-                    "cancelUrl": '%s/shop/payment' % values['base_url'], # This url redirects back to the shop
-                    "callbackUrl": '%s/payment/swedbankpay/callback' % values['base_url'],
+                    "cancelUrl": values["cancel_url"],
+                    "callbackUrl": values['callback_url'],
                 },
                 "payeeInfo": {
                     "payeeId": values['merchant_id'],  # self.swedbankpay_merchant_id 
@@ -302,22 +328,19 @@ class SwedbankPayController(WebsiteSale):
                 return operation
         return None
 
-    def check_response(self, resp, tx):
-        _logger.warning("~ 1 %s" % resp.status_code)
-        _logger.warning("~ 2 %s" % resp.__dict__)
-
+    def check_response(self, resp):
         if resp.status_code == 401:
             return {"ok": False, "error_message" : 'Swedbankpay server is not available right now', "problems": {}}
 
         response_dict = json.loads(resp.text)
         response_json = resp.json()
-        
+
         # Payment has attribute operations..
-        if response_json.get('operations', False):
+        if response_json.get('operations'):
             return {"ok": True, "error_message" : '', "problems": {}}
 
         if resp.status_code != 200:
-            problems = response_dict.get("problems", False)
+            problems = response_dict.get("problems")
 
             if not problems:
                 return {"ok": False, "error_message" : 'Swedbankpay server is not available right now', "problems": {}}
@@ -326,105 +349,11 @@ class SwedbankPayController(WebsiteSale):
         else:
             return {"ok": True, "error_message" : '', "problems": {}}
 
-    # Copied from core controller /payment/core/
-    def swedbankpay_payment_transaction(self, acquirer_id, save_token=False, so_id=None, access_token=None, token=None, **kwargs):
-        """ Json method that creates a payment.transaction, used to create a
-        transaction when the user clicks on 'pay now' button. After having
-        created the transaction, the event continues and the user is redirected
-        to the acquirer website.
 
-        :param int acquirer_id: id of a payment.acquirer record. If not set the
-                                user is redirected to the checkout page
-        """
-        # Ensure a payment acquirer is selected
-        if not acquirer_id:
-            return {"sucess": False, "transaction_id": -1, 'message': 'not acquirer_id %s' % acquirer_id}
-
-        try:
-            acquirer_id = int(acquirer_id)
-        except:
-            return {"sucess": False, "transaction_id": -1, 'message': 'try int acquirer_id %s' % acquirer_id}
-
-        # Retrieve the sale order
-        domain = []
-        if so_id:
-            env = request.env['sale.order']
-            domain = [('id', '=', so_id)]
-            if access_token:
-                env = env.sudo()
-                domain.append(('access_token', '=', access_token))
-            order = env.search(domain, limit=1)
-        else:
-            order = request.website.sale_get_order()
-
-        if not order:
-            order = request.website.sale_get_order()
-            
-        # Ensure there is something to proceed
-        if not order or (order and not order.order_line):
-            return {"sucess": False, "transaction_id": -1, 'message': 'not order  %{order} so_id {so_id} domain {domain} {get_order}'.format(order=order,so_id=so_id,domain=domain,get_order=request.website.sale_get_order())}
-
-        assert order.partner_id.id != request.website.partner_id.id
-
-        # Create transaction
-        vals = {'acquirer_id': acquirer_id,
-                'return_url': '/shop/payment/validate'}
-
-        if save_token:
-            vals['type'] = 'form_save'
-        if token:
-            vals['payment_token_id'] = int(token)
-
-        transaction = order.sudo()._create_payment_transaction(vals)
-
-        # store the new transaction into the transaction list and if there's an old one, we remove it
-        # until the day the ecommerce supports multiple orders at the same time
-        last_tx_id = request.session.get('__website_sale_last_tx_id')
-        last_tx = request.env['payment.transaction'].browse(last_tx_id).sudo().exists()
-        if last_tx:
-            PaymentProcessing.remove_payment_transaction(last_tx)
-        PaymentProcessing.add_payment_transaction(transaction)
-        request.session['__website_sale_last_tx_id'] = transaction.id
-
-        return {"sucess": True, "transaction_id": str(transaction.id)}
-
-    def payment_validate(self, transaction_id=None, sale_order_id=None, **post):
-        """ Method that should be called by the server when receiving an update
-        for a transaction. State at this point :
-
-         - UDPATE ME
-        """
-        if sale_order_id is None:
-            order = request.website.sale_get_order()
-        else:
-            order = request.env['sale.order'].sudo().browse(sale_order_id)
-            assert order.id == request.session.get('sale_last_order_id')
-
-        if transaction_id:
-            tx = request.env['payment.transaction'].sudo().browse(transaction_id)
-            assert tx in order.transaction_ids()
-        elif order:
-            tx = order.get_portal_last_transaction()
-        else:
-            tx = None
-
-        if not order or (order.amount_total and not tx):
-            return request.redirect('/shop')
-
-        if order and not order.amount_total and not tx:
-            return request.redirect(order.get_portal_url())
-
-        # clean context and session, then redirect to the confirmation page
-        request.website.sale_reset()
-        if tx and tx.state == 'draft':
-            return request.redirect('/shop')
-
-        PaymentProcessing.remove_payment_transaction(tx)
-        return request.redirect('/shop/confirmation')
-
+# These two can be removed?
     # This the check of the payment is done earlier in our code...
     # this function is only done for.... write something smart...
-    def remove_context(self, transaction_id=None):
+    def remove_context(self, tx):
         tx = request.env['payment.transaction'].sudo().browse(transaction_id)
         request.website.sale_reset()
         remove_tx = PaymentProcessing.remove_payment_transaction(tx)
