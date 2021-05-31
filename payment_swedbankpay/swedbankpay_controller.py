@@ -202,7 +202,6 @@ class SwedbankPayController(WebsiteSale):
             tx.state = 'error'
             return request.render("payment_swedbankpay.unexpected")
 
-    # TODO: Change name, this is the controller that initialize the payment
     @http.route(['/payment/swedbankpay/init'], auth='public', website=True, csrf=False, type='http')
     def init_swedbankpay(self, **post):
         tx_id = request.session.get('__website_sale_last_tx_id')
