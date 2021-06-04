@@ -36,16 +36,6 @@ from odoo.addons.payment.controllers.portal import PaymentProcessing
 
 _logger = logging.getLogger(__name__)
 
-# TODO:
-# Do some type of redirect, either use odoos or use an button for redirection (new snippet) that calls on controllers here.
-
-# An other way is to "hjiack" the core-odoo controllers and "extend" them,
-# check the routes in the controller /usr/share/core-odoo/addons/website_sale/controllers/main.py
-# /shop/payment, /shop/payment/transaction, /shop/payment/validate, /shop/confirmation
-#
-# Testdata
-# https://developer.swedbankpay.com/resources/test-data
-
 
 class SwedbankPayController(WebsiteSale):
 
@@ -66,14 +56,20 @@ class SwedbankPayController(WebsiteSale):
 
     @http.route('/payment/swedbankpay/callback/<transaction_id>', type='json', auth='none', csrf=False, method='POST')
     def swedbankpay_callback(self, transaction_id, **post):
-        _logger.info("\n"*2 + "~"*25 + f"Callback" + "~"*25)
-        _logger.info(f'Transaction id: {transaction_id}')
-        # As Swedbank data is not within a params key it will not be
-        # added to kw args, we need to get it from requests instead.
+        _logger.debug('~'*25 + 'Calback' + '~'*25)
         data = json.loads(request.httprequest.data)
+        _logger.warning(f'Callback header:\n{request.httprequest.headers}')
+        _logger.warning(f'Callback data: {data}')
+
         uri = data.get('transaction', {}).get('id')
         tx = request.env['payment.transaction'].sudo().search([('id', '=', transaction_id)])
-        assert tx.provider == 'swedbankpay'
+        if not tx:
+            _logger.warning(f'Callback could not find associated transaction: {transaction_id}')
+            return
+
+        if not tx.provider == 'swedbankpay':
+            _logger.warning('Swedbankpay controller received callback not associated to swedbankpay: {tx.provider}')
+            return 
 
         # Verify that the URI we "trust" from SwedbankPay atleast is 
         # for the same transaction.
@@ -89,12 +85,12 @@ class SwedbankPayController(WebsiteSale):
         test = 'externalintegration.' if tx.acquirer_id.state == 'test' else ''
         validation_url = f'https://api.{test}payex.com' + uri
 
-        for i in range(3):
+        for i in range(10):
             resp = requests.get(validation_url, headers=headers)
             if resp.status_code == 200:
                 _logger.info('Got response code 200 in callback')
                 break
-            time.sleep(10)
+            time.sleep(10*i)
         else:
             # Should do something here?
             _logger.warning('Callback could not get status from transaction')
@@ -109,9 +105,12 @@ class SwedbankPayController(WebsiteSale):
         # Failed transaction
         elif auth_status == 'N':
             _logger.warning('Payment failed')
-        _logger.warning(auth_status, state)
-
-        return "payment callbacked!"
+        # What to do here?
+        else:
+            pass
+        _logger.debug('~'*25 + 'Callback complete' + '~'*25)
+        
+        return "Callback received succesfully"
 
     # Use the unique id that was sent in  values["complete_url"] 
     @http.route('/payment/swedbankpay/verify/<transaction_id>', type='http', auth='public', method='POST', website=True, sitemap=False)
