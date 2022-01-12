@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<odoo>
+    <record id="klarna_icon" model="payment.icon">
+        <field name="name">Klarna Test David</field>
+<!-- 
+    TODO: Add Klarna logo here
+        <field name="image" type="base64" file="static/img/klarna.png"/>
+-->
+    </record>
+</odoo>
