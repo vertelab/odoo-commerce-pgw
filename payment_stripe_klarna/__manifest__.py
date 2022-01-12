@@ -20,7 +20,7 @@
 ##############################################################################
 {
     'name': 'Payment Stripe Klarna',
-    'version': '1.0',
+    'version': '14.0.0.0.1',
     'author': 'Vertel',
     'category': 'Sales',
     'description': """
