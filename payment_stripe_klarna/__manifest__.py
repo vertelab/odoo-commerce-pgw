@@ -20,8 +20,8 @@
 ##############################################################################
 {
     'name': 'Payment Stripe Klarna',
-    'version': '14.0.0.0.1',
-    'author': 'Vertel',
+    'version': '14.0.1.0.0',
+    'author': 'Vertel AB',
     'category': 'Sales',
     'description': """
 Adds Klarna as payment type for stripe
