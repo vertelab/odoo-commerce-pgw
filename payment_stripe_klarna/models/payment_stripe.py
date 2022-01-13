@@ -6,34 +6,31 @@ from odoo import api, fields, models, _
 
 _logger = logging.getLogger(__name__)
 
-# The following currencies are integer only, see https://stripe.com/docs/currencies#zero-decimal
-INT_CURRENCIES = [
-    u'BIF', u'XAF', u'XPF', u'CLP', u'KMF', u'DJF', u'GNF', u'JPY', u'MGA', u'PYG', u'RWF', u'KRW',
-    u'VUV', u'VND', u'XOF'
-]
-STRIPE_SIGNATURE_AGE_TOLERANCE = 600  # in seconds
-
-
 class PaymentAcquirerStripe(models.Model):
     _inherit = 'payment.acquirer'
 
     @api.model
     def _add_available_payment_method_types(self, stripe_session_data, tx_values):
         """
-        Add payment methods available for the given transaction
+        Appends Klarna as a Payment as a usable Payment alternative for Stripe.
+
+        https://stripe.com/docs/payments/klarna
 
         :param stripe_session_data: dictionary to add the payment method types to
         :param tx_values: values of the transaction to consider the payment method types for
         """
+        super(PaymentAcquirerStripe, self)._add_available_payment_method_types(
+            stripe_session_data, tx_values
+        )
         PMT = namedtuple('PaymentMethodType', ['name', 'countries', 'currencies', 'recurrence'])
+
+        # https://stripe.com/docs/payments/klarna
         all_payment_method_types = [
-            PMT('card', [], [], 'recurring'),
-            PMT('ideal', ['nl'], ['eur'], 'punctual'),
-            PMT('bancontact', ['be'], ['eur'], 'punctual'),
-            PMT('eps', ['at'], ['eur'], 'punctual'),
-            PMT('giropay', ['de'], ['eur'], 'punctual'),
-            PMT('p24', ['pl'], ['eur', 'pln'], 'punctual'),
-            PMT('klarna', ['at', 'be', 'de', 'dk', 'es', 'fi', 'fr', 'ie', 'it', 'nl', 'no', 'gb', 'us', 'se'], ['eur', 'sek', 'usd', 'nok', 'dkk', 'gdp'], 'recurring'),
+            PMT('klarna',
+                ['at', 'be', 'de', 'dk', 'es', 'fi', 'fr', 'ie', 'it', 'nl',
+                 'no', 'gb', 'se'], # 'us', # Removed see comment on currency
+                ['eur', 'sek', 'nok', 'dkk', 'gdp'], # usd seem ok in doc but not in Odoo - Note: usd doesn't support 'Pay Now'
+                 'recurring'),
         ]
 
         existing_icons = [(icon.name or '').lower() for icon in self.env['payment.icon'].search([])]
@@ -50,6 +47,13 @@ class PaymentAcquirerStripe(models.Model):
         pmt_recurrence_filtered = filter(lambda pmt: tx_values.get('type') != 'form_save' or pmt.recurrence == 'recurring',
                                     pmt_currency_filtered)
 
+        # stripe_session_data has indices in the dict key which makes following
+        # rows a candidate for ugly code.
+        # TODO: Refactor the snippet below - There is only one defined pmt in
+        #       this method
         available_payment_method_types = map(lambda pmt: pmt.name, pmt_recurrence_filtered)
-        for idx, payment_method_type in enumerate(available_payment_method_types):
-            stripe_session_data[f'payment_method_types[{idx}]'] = payment_method_type
+        for payment_method_type in available_payment_method_types:
+            # Counting previous methods
+            count_pmts = len(tuple(filter(lambda X: 'payment_method_types[' in X,
+                                    stripe_session_data)))
+            stripe_session_data[f'payment_method_types[{count_pmts}]'] = payment_method_type
