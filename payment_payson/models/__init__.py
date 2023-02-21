@@ -1,3 +1,2 @@
 # -*- coding: utf-8 -*-
-
-import payson
+from . import payment
