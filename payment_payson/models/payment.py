@@ -87,16 +87,13 @@ class AcquirerPayson(models.Model):
             }
 
     def _payson_request(self, data=None, method='POST', endpoint=None):
-        print(self._get_payson_urls(environment=self.state)['payson_form_url'])
         url = urls.url_join(self._get_payson_urls(environment=self.state)['payson_form_url'], endpoint)
-        print("url", url)
         payson_agent_key = f"{self.payson_agent_id}:{self.payson_key}".encode()
         credential_str = base64.b64encode(payson_agent_key).decode('ascii')
         headers = {
             'Authorization': 'Basic %s' % credential_str,
             'Content-Type': 'application/json'
         }
-        print(url)
         resp = requests.request(method, url, data=data, headers=headers)
         return resp
 
