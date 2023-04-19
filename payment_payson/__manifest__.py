@@ -31,6 +31,7 @@
     'data': [
         'views/payson.xml',
         'views/payment_acquirer.xml',
+        'views/templates.xml',
         'data/payson.xml',
     ],
     'installable': True,

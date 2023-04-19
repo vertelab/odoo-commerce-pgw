@@ -2,77 +2,51 @@
 
 import logging
 import pprint
+import json
 import requests
 import werkzeug
 
-from odoo import http
+from odoo import http, _
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 
 
 class PaysonController(http.Controller):
+    _checkout_url = '/payment/payson/checkout'
+    _confirmation_url = '/payment/payson/confirmation'
+    _notification_url = '/payment/payson/notification'
+    _term_url = '/payment/stripe/terms'
 
-    @http.route('/payment/payson/verify', type='http', auth='public', method='POST')
-    def auth_payment(self, **post):
-    #     """
-    #     Foo.
-    #     """
-    #     _logger.debug('Processing Payson callback with post data:\n%s' % pprint.pformat(post))  # debug
-    #
-    #     token = post.get('token')
-    #     _logger.debug('token: |%s|' % token)
-    #     if not token:
-    #         return ''
-    #     tx = request.env['payment.transaction'].sudo().search([('acquirer_reference', '=', token)])
-    #     if len(tx) != 1:
-    #         _logger.debug('no transaction found: %s' % tx)
-    #         return ''
-    #     tx = tx[0]
-    #     # Verification requires access to post data in the original order. Odoo does not support this.
-    #     # Instead we look up Payment Details for the token we are given, and use that data to update transactions
-    #     lookup = tx.sudo()._payson_send_post('api.payson.se/1.0/PaymentDetails/', {'TOKEN': token})
-    #     _logger.debug('lookup: %s' % lookup)
-    #     if lookup:
-    #         data = get_param_dict(lookup)
-    #         res = request.env['payment.transaction'].sudo().form_feedback(data, 'payson')
-    #         _logger.debug('value of res: %s' % res)
-    #     else:
-    #         _logger.debug('Payson lookup failed')
-        return ''
-    #
-    # @http.route('/payment/payson/initPayment', type='http', auth='public', method='POST')
-    # def init_payment(self, **post):
-    #     """
-    #     Contact Payson and redirect customer.
-    #     """
-    #
-    #     # order = request.website.sale_get_order(context=context)
-    #     _logger.warn('init_payment')
-    #     tx_id = request.session.get('sale_transaction_id')
-    #     _logger.warn('tx_id: %s' % tx_id)
-    #     if not tx_id:
-    #         return 'Error: Transaction not found'
-    #     tx = request.env['payment.transaction'].sudo().browse(tx_id)
-    #     if not tx:
-    #         return 'Error: Transaction not found'
-    #
-    #     # TODO: Redirect to error page instead of ugly messages
-    #     # ~ if not post.get('reference'):
-    #     # ~ return 'Error: No reference'
-    #     # ~ if not post.get('email'):
-    #     # ~ return 'Error: No e-mail'
-    #     # ~ if not post.get('name'):
-    #     # ~ return 'Error: No name'
-    #     # ~ tx = request.env['payment.transaction'].search(
-    #     # ~ [('reference', '=', post.get('reference')),
-    #     # ~ ('partner_name', '=', post.get('name')),
-    #     # ~ ('partner_email', '=', post.get('email'))])
-    #     # ~ if not tx:
-    #     # ~ return 'Error: Transaction not found'
-    #     _logger.warn('tx found')
-    #     res = tx.sudo().payson_init_payment()
-    #     _logger.warn('res: %s' % res)
-    #     if not res:
-    #         return 'Error: Could not contact Payson'
-    #     return werkzeug.utils.redirect(res, 302)
+    @http.route(_checkout_url, type='http', auth='public', website=True, csrf=False)
+    def payson_checkout(self, **post):
+        transaction_id = request.env['payment.transaction'].sudo().browse(
+            request.session.get('__website_sale_last_tx_id'))
+
+        if transaction_id:
+            payson_resp = transaction_id._payson_payment_verification()
+            if payson_resp.get("status") in ["denied", "canceled", "expired"]:
+                return request.redirect('/shop/cart')
+
+            values = {"transaction_id": transaction_id}
+            return request.render("payment_payson.payson_checkout", values)
+        else:
+            return request.redirect('/shop')
+
+    @http.route(_confirmation_url, type='http', auth='public', csrf=False)
+    def payson_confirmation(self, **post):
+        _logger.info('Payson Payson Confirmation: receiving payson term: %s', post)
+        last_tx_id = request.env['payment.transaction'].sudo().browse(request.session.get('__website_sale_last_tx_id'))
+        last_tx_id._payson_checkout_get_tx_data()
+        return werkzeug.utils.redirect('/payment/process')
+
+    @http.route(_notification_url, type='json', auth='public', csrf=False)
+    def payson_notification(self, **post):
+        _logger.info('Payson Payson Notification: receiving payson term: %s', post)
+        transaction_id = request.env['payment.transaction'].sudo().sudo().search([
+                ("payson_transaction_id", "=", post.get('checkout'))])
+        transaction_id.sudo()._payson_checkout_get_tx_data()
+
+    @http.route(_term_url, type='http', auth='public', csrf=False)
+    def payson_term(self, **post):
+        _logger.info('Payson Payson Term: receiving payson term: %s', post)
