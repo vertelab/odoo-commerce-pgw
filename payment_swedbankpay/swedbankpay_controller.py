@@ -99,14 +99,28 @@ class SwedbankPayController(WebsiteSale):
         auth = resp_data.get('authorization', {})
         auth_status = auth.get('authenticationStatus')
         state = auth.get('transaction', {}).get('state')
+        failure_reason = auth.get('failedReason')
         # Successfull transaction
+        
+        #https://verifone.cloud/docs/online-payments/3dsecure
+        #auth_status possible values
+        #Y: Authentication is successful
+        #N: Authentication fails
+        #A: Authentication attempted (see the next sections for details)
+        #U: Unable to authenticate (e.g., Issuer’s ACS is down)
+        
+        #https://developer.swedbankpay.com/payment-instruments/card/features/core/callback
+        #auth_status possible values
+        #Indicates the state of the transaction, usually initialized, completed or failed. If a partial authorization has been done and further transactions are possible, the state will be awaitingActivity
+        
         if state == 'Completed' and auth_status == 'Y':
             self.complete_transaction(tx, mail=False)
         # Failed transaction
         elif auth_status == 'N':
-            _logger.warning('Payment failed')
+            _logger.warning(f'Payment failed {state=} {auth_status=} {failure_reason=}')
         # What to do here?
         else:
+            _logger.warning(f"Callback response not supported. {state=} {auth_status=} {failure_reason=}")
             pass
         _logger.debug('~'*25 + 'Callback complete' + '~'*25)
         
