@@ -117,10 +117,12 @@ class SwedbankPayController(WebsiteSale):
             self.complete_transaction(tx, mail=False)
         # Failed transaction
         elif auth_status == 'N':
-            _logger.warning(f'Payment failed {state=} {auth_status=} {failure_reason=}')
+            failure_reason = auth.get('failedReason')
+            _logger.warning(f"Payment failed state={state} auth_status={auth_status} failure_reason={failure_reason}")
         # What to do here?
         else:
-            _logger.warning(f"Callback response not supported. {state=} {auth_status=} {failure_reason=}")
+            failure_reason = auth.get('failedReason')
+            _logger.warning(f"Callback response not supported. state={state} auth_status={auth_status} failure_reason={failure_reason}")
             pass
         _logger.debug('~'*25 + 'Callback complete' + '~'*25)
         
