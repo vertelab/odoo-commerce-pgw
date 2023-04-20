@@ -99,8 +99,7 @@ class SwedbankPayController(WebsiteSale):
         auth = resp_data.get('authorization', {})
         auth_status = auth.get('authenticationStatus')
         state = auth.get('transaction', {}).get('state')
-        failure_reason = auth.get('failedReason')
-        # Successfull transaction
+        
         
         #https://verifone.cloud/docs/online-payments/3dsecure
         #auth_status possible values
@@ -113,6 +112,7 @@ class SwedbankPayController(WebsiteSale):
         #auth_status possible values
         #Indicates the state of the transaction, usually initialized, completed or failed. If a partial authorization has been done and further transactions are possible, the state will be awaitingActivity
         
+        # Successfull transaction
         if state == 'Completed' and auth_status == 'Y':
             self.complete_transaction(tx, mail=False)
         # Failed transaction
