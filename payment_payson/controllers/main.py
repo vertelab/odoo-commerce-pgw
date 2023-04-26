@@ -40,7 +40,7 @@ class PaysonController(http.Controller):
         last_tx_id._payson_checkout_get_tx_data()
         return werkzeug.utils.redirect('/payment/process')
 
-    @http.route(_notification_url, type='json', auth='public', csrf=False)
+    @http.route(_notification_url, type='http', auth='public', csrf=False)
     def payson_notification(self, **post):
         _logger.info('Payson Payson Notification: receiving payson term: %s', post)
         transaction_id = request.env['payment.transaction'].sudo().sudo().search([

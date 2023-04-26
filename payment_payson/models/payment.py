@@ -104,7 +104,7 @@ class AcquirerPayson(models.Model):
 class TxPayson(models.Model):
     _inherit = 'payment.transaction'
 
-    payson_expiration_time = fields.Char(string='Expiration Time', readonly=True)
+    payson_expiration_time = fields.Datetime(string='Expiration Time', readonly=True)
     payson_transaction_id = fields.Char(string='Transaction ID', readonly=True)
     payson_purchase_id = fields.Char(string='Purchase ID', readonly=True)
     payson_transaction_snippet = fields.Text(string='Transaction Snippet', readonly=True)
@@ -146,14 +146,22 @@ class TxPayson(models.Model):
             error_msg = _('Payson: no order found for transaction id')
             raise ValidationError(error_msg)
 
+    def test_trigger(self):
+        self._payson_checkout_get_tx_data()
+
     def _payson_checkout_get_tx_data(self):
         self.ensure_one()
         if self.state == 'pending':
             pass
 
-        if self.state != 'draft':
-            _logger.info('Payson: trying to validate an already validated tx (ref %s)', self.payson_transaction_id)
+        if self.state in ['cancel', 'error']:
+            _logger.warning(
+                'Payson: trying to validate a cancelled payment and order tx (ref %s)', self.payson_transaction_id)
             return True
+
+        # if self.state != 'draft':
+        #     _logger.warning('Payson: trying to validate an already validated tx (ref %s)', self.payson_transaction_id)
+        #     return True
 
         payson_data = self._payson_payment_verification()
 
@@ -179,5 +187,31 @@ class TxPayson(models.Model):
                 self.payment_token_id.verified = True
             return True
         else:
+            self.write({
+                'state_message': "Customer Cancelled Order",
+                "payson_transaction_status": payson_data.get("status"),
+            })
             self._set_transaction_cancel()
             return False
+
+    def _set_transaction_cancel(self):
+        '''Move the transaction's payment to the cancel state(e.g. Paypal).'''
+        allowed_states = ('draft', 'authorized')
+        target_state = 'cancel'
+        (tx_to_process, tx_already_processed, tx_wrong_state) = self._filter_transaction_state(
+            allowed_states, target_state)
+        if not tx_to_process:
+            tx_to_process = self
+        for tx in tx_already_processed:
+            _logger.info('Trying to write the same state twice on tx (ref: %s, state: %s' % (tx.reference, tx.state))
+        for tx in tx_wrong_state:
+            _logger.warning('Processed tx with abnormal state (ref: %s, target state: %s, previous state %s, '
+                            'expected previous states: %s)' % (tx.reference, target_state, tx.state, allowed_states))
+
+        # Cancel the existing payments.
+        tx_to_process.mapped('payment_id').action_cancel()
+        tx_to_process.write({'state': target_state, 'date': fields.Datetime.now()})
+        self.sale_order_ids.action_cancel()
+        tx_to_process._log_payment_transaction_received()
+
+
