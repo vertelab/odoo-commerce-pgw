@@ -141,13 +141,11 @@ class TxPayson(models.Model):
         if self.payson_transaction_id:
             payment_data = self.acquirer_id.sudo()._payson_request(data=None, method='GET',
                                                                    endpoint=f"/Checkouts/{self.payson_transaction_id}")
+            print(payment_data)
             return payment_data
         else:
             error_msg = _('Payson: no order found for transaction id')
             raise ValidationError(error_msg)
-
-    def test_trigger(self):
-        self._payson_checkout_get_tx_data()
 
     def _payson_checkout_get_tx_data(self):
         self.ensure_one()
