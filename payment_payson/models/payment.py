@@ -69,21 +69,31 @@ class AcquirerPayson(models.Model):
                 "confirmationUri": urls.url_join(self.get_base_url(), PaysonController._confirmation_url),
                 "notificationUri": urls.url_join(self.get_base_url(), PaysonController._notification_url),
                 "termsUri": urls.url_join(self.get_base_url(), PaysonController._term_url),
+                "reference": order.name
             },
             "customer": {
                 "email": order.partner_id.email,
                 "firstName": first_name,
                 "lastName": last_name,
+                'city': order.partner_id.city,
+                'countryCode': order.partner_id.country_id.code,
+                'phone': order.partner_id.phone or order.partner_id.mobile,
+                'postalCode': order.partner_id.zip,
+                'street': order.partner_id.street,
+                'type': 'person'
             },
             "order": {
                 "currency": "SEK",
-                "items": [{
-                    "name": line_item.product_id.name,
-                    "reference": line_item.product_id.default_code or '',
-                    "quantity": line_item.product_uom_qty,
-                    "unitPrice": line_item.price_unit,
-                    "taxRate": ""
-                } for line_item in order.order_line]
+                "items": [
+                    {
+                        "name": line_item.product_id.name,
+                        "reference": line_item.product_id.default_code or '',
+                        "quantity": line_item.product_uom_qty,
+                        "unitPrice": line_item.price_unit,
+                        "taxRate": "",
+                        "type": "physical" if line_item.product_id.type != "service" else "service",
+                    } for line_item in order.order_line
+                ]
             }
         }
 
@@ -141,7 +151,6 @@ class TxPayson(models.Model):
         if self.payson_transaction_id:
             payment_data = self.acquirer_id.sudo()._payson_request(data=None, method='GET',
                                                                    endpoint=f"/Checkouts/{self.payson_transaction_id}")
-            print(payment_data)
             return payment_data
         else:
             error_msg = _('Payson: no order found for transaction id')

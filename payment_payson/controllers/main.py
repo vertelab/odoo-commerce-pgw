@@ -16,7 +16,7 @@ class PaysonController(http.Controller):
     _checkout_url = '/payment/payson/checkout'
     _confirmation_url = '/payment/payson/confirmation'
     _notification_url = '/payment/payson/notification'
-    _term_url = '/payment/stripe/terms'
+    _term_url = '/payment/payson/terms'
 
     @http.route(_checkout_url, type='http', auth='public', website=True, csrf=False)
     def payson_checkout(self, **post):
