@@ -19,18 +19,21 @@
 #
 ##############################################################################
 {
-'name': 'Payson Payment Acquirer',
-'version': '0.1',
-'summary': 'Payment Acquirer: Payson Implementation',
-'category': 'Hidden',
-'description': """Payson Payment Acquirer""",
-'author': 'Vertel AB',
+    'name': 'Payson Payment Acquirer',
+    'version': '1.0',
+    'summary': 'Payment Acquirer: Payson Implementation',
+    'category': 'Accounting/Payment Acquirers',
+    'description': """Payson Payment Acquirer""",
+    'author': 'Vertel AB',
     'license': 'AGPL-3',
-'website': 'http://www.vertel.se',
-'depends': ['payment'],
-'data': ['views/payson.xml',
+    'website': 'http://www.vertel.se',
+    'depends': ['payment'],
+    'data': [
+        'views/payson.xml',
         'views/payment_acquirer.xml',
+        'views/stock_picking_view.xml',
+        'views/templates.xml',
         'data/payson.xml',
-],
-'installable': True,
+    ],
+    'installable': True,
 }

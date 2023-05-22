@@ -2,21 +2,26 @@
 <openerp>
     <data noupdate="0">
 
-        <template id="payson_acquirer_button">
-            <form t-att-action="tx_url" method="post" target="_self">
-                <input type="hidden" name="reference" t-att-value="tx_values['reference']"/>
-                <input type="hidden" name="name" t-att-value="partner_values['name']"/>
-                <input type="hidden" name="email" t-att-value="partner_values['email']"/>
-                <!-- submit -->
-                <button type="submit" width="100px"
-                    t-att-class="submit_class">
-<!--
-                    <t t-if="tx_values['payson_testmode'] == 'test'">TEST </t>
--->
-                    <img t-if="not submit_txt" src="/payment_payson/static/src/img/payson_icon.png"/>
-                    <span t-if="submit_txt"><t t-esc="submit_txt"/> <span class="fa fa-long-arrow-right"/></span>
-                </button>
-            </form>
+        <template id="payson_form">
+            <div>
+                <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
+                <input type="hidden" name="item_name" t-att-value="item_name"/>
+                <input type="hidden" name="txn_no" t-att-value="txn_no"/>
+                <input type="hidden" name="amount" t-att-value="amount"/>
+                <input type="hidden" name="currency_code" t-att-value="currency_code"/>
+                <!--  partner / address data  -->
+                <input type="hidden" name="address1" t-att-value="address1"/>
+                <input type="hidden" name="city" t-att-value="city"/>
+                <input type="hidden" name="country" t-att-value="country"/>
+                <input type="hidden" name="email" t-att-value="email"/>
+                <input type="hidden" name="first_name" t-att-value="first_name"/>
+                <input type="hidden" name="last_name" t-att-value="last_name"/>
+                <input type="hidden" name="zip" t-att-value="zip_code"/>
+                <input t-if="state" type="hidden" name="state" t-att-value="state"/>
+                <input type="hidden" name="amount" t-att-value="amount"/>
+                <input t-if="custom" type="hidden" name="custom" t-att-value="custom"/>
+                <input t-if="complete_url" type="hidden" name="complete_url" t-att-value="complete_url"/>
+            </div>
         </template>
 
     </data>

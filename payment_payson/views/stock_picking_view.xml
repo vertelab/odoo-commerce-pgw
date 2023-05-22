@@ -1,0 +1,15 @@
+<odoo>
+    <data>
+        <record id="stock_picking_form_view" model="ir.ui.view">
+            <field name="name">stock.picking.form</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">
+                <field name="group_id" position="after">
+                    <field name="transaction_ids" widget="many2many_tags" invisible="1"/>
+                    <field name="authorized_transaction_ids" widget="many2many_tags" invisible="1"/>
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>
