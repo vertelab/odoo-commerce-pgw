@@ -27,7 +27,7 @@
     'author': 'Vertel AB',
     'license': 'AGPL-3',
     'website': 'http://www.vertel.se',
-    'depends': ['payment'],
+    'depends': ['payment','stock'],
     'data': [
         'views/payson.xml',
         'views/payment_acquirer.xml',
