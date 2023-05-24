@@ -1,0 +1,253 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* payment_payson
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 14.0-20220428\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-23 12:29+0000\n"
+"PO-Revision-Date: 2023-05-23 12:29+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: payment_payson
+#: model:ir.model.fields,help:payment_payson.field_payment_transaction__payson_transaction_status
+msgid ""
+"\n"
+"                                Created - Set by Payson after the checkout has been created \n"
+"                                Ready To Pay - Set by Payson after all necessary customer information has been added.\n"
+"                                Ready To Ship - Set by Payson after the customer has completed a payment or when an invoice can be sent.\n"
+"                                Shipped - Set by the merchant to signal that the order has been shipped..\n"
+"                                Paid To Account - Set by Payson when money has been paid out to the merchant´s account.\n"
+"                                Expired - Set by Payson when expirationTime is reached for a checkout with status created (default 3 hours),\n"
+"                                    or when the status readyToShip has been set for more than 59 days.\n"
+"                                Canceled - Set by either the merchant or the customer.\n"
+"                                    The customer is able to cancel the order before its status is set to readyToShip.\n"
+"                                    The merchant is able to cancel the order before its status is set to shipped.\n"
+"                                Denied - Payson will set the status to denied if the purchase is denied for any reason."
+msgstr ""
+"                                Skapad - Sätts av Payson efter att utcheckningen har skapats.\n"
+"                                Redo att betalas - Sätts av Payson efter att all nödvändig kundinformation har lagts till.\n"
+"                                Redo att skickas - Sätts av Payson efter att kunden genomfört en betalning eller när en faktura kan skickas.\n"
+"                                Skickad - Sätts av säljaren för att signalera att beställningen har skickats.\n"
+"                                Inbetald - Sätts av Payson när pengar har betalats ut till säljarens konto.\n"
+"                                Utgången - Sätts av Payson när utgångstiden nås för en utcheckning med status skapad (default 3 timmar),\n"
+"                                    eller när statusen Redo att skickas har varit satt i mer än 59 dagar.\n"
+"                                Avbruten - Sätts av antingen säljaren eller kunden.\n"
+"                                    Kunden kan avbryta beställningen så länge dess status inte är satt till Redo att skickas.\n"
+"                                    Säljaren kan avbryta beställningen innan dess status är satt till Skickad.\n"
+"                                Nekad – Payson kommer att sätta statusen till nekad om köpet nekas av någon anledning."
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__canceled
+msgid "Canceled"
+msgstr "Avbruten"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__created
+msgid "Created"
+msgstr "Skapad"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__denied
+msgid "Denied"
+msgstr "Nekad"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__display_name
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__display_name
+#: model:ir.model.fields,field_description:payment_payson.field_stock_picking__display_name
+msgid "Display Name"
+msgstr "Visningsnamn"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__payson_expiration_time
+msgid "Expiration Time"
+msgstr "Utgångstid"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__expired
+msgid "Expired"
+msgstr "Utgången"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__id
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__id
+#: model:ir.model.fields,field_description:payment_payson.field_stock_picking__id
+msgid "ID"
+msgstr ""
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer____last_update
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction____last_update
+#: model:ir.model.fields,field_description:payment_payson.field_stock_picking____last_update
+msgid "Last Modified on"
+msgstr "Senast ändrad den"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__paidtoaccount
+msgid "Paid To Account"
+msgstr "Inbetald"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__payson_agent_id
+msgid "Payer Agent ID"
+msgstr "Betalningsombud ID"
+
+#. module: payment_payson
+#: model:ir.model,name:payment_payson.model_payment_acquirer
+msgid "Payment Acquirer"
+msgstr "Betalningsförvärvare"
+
+#. module: payment_payson
+#: model:ir.model,name:payment_payson.model_payment_transaction
+msgid "Payment Transaction"
+msgstr "Betalningstransaktion"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_acquirer__provider__payson
+#: model:payment.acquirer,name:payment_payson.payment_acquirer_payson
+#: model_terms:ir.ui.view,arch_db:payment_payson.transaction_form_payson
+msgid "Payson"
+msgstr ""
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__payson_key
+msgid "Payson Key"
+msgstr "Payson Nyckel"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__payson_transaction_status
+msgid "Payson Status"
+msgstr ""
+
+#. module: payment_payson
+#: code:addons/payment_payson/models/payment.py:0
+#, python-format
+msgid "Payson: no order found for transaction id"
+msgstr "Payson: ingen order funnen för transaktions id"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__provider
+msgid "Provider"
+msgstr "Leverantör"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__payson_purchase_id
+msgid "Purchase ID"
+msgstr "Inköps ID"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__readytopay
+msgid "Ready To Pay"
+msgstr "Redo att betalas"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__readytoship
+msgid "Ready To Ship"
+msgstr "Redo att skickas"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_stock_picking__authorized_transaction_ids
+msgid "SO Authorized Transactions"
+msgstr "SO Auktoriserade överföringar"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_stock_picking__transaction_ids
+msgid "SO Transactions"
+msgstr "SO Överföringar"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_acquirer__payson_email
+msgid "Seller E-mail"
+msgstr "Säljarens E-post"
+
+#. module: payment_payson
+#: model:ir.model.fields.selection,name:payment_payson.selection__payment_transaction__payson_transaction_status__shipped
+msgid "Shipped"
+msgstr "Skickad"
+
+#. module: payment_payson
+#: model_terms:ir.ui.view,arch_db:payment_payson.payson_checkout
+msgid "Shop - Select Payment Acquirer"
+msgstr "Shop - Välj betalningsförvärvare"
+
+#. module: payment_payson
+#: model:ir.model.fields,help:payment_payson.field_payment_acquirer__payson_key
+msgid "The payson key."
+msgstr "Payson nyckeln."
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__total_fee_excluding_tax
+msgid "Total Fee Excluding Tax"
+msgstr "Total summa exklusive skatt"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__total_fee_including_tax
+msgid "Total Fee Including Tax"
+msgstr "Total summa inklusive skatt"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__total_price_excluding_tax
+msgid "Total Price Excluding Tax"
+msgstr "Totalt pris exklusive skatt"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__total_price_including_tax
+msgid "Total Price Including Tax"
+msgstr "Totalt pris inklusive skatt"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__total_tax_amount
+msgid "Total Tax Amount"
+msgstr "Totalt skattebelopp"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__payson_transaction_id
+msgid "Transaction ID"
+msgstr "Transaktions ID"
+
+#. module: payment_payson
+#: model:ir.model.fields,field_description:payment_payson.field_payment_transaction__payson_transaction_snippet
+msgid "Transaction Snippet"
+msgstr "Transaktionssnippet"
+
+#. module: payment_payson
+#: model:ir.model,name:payment_payson.model_stock_picking
+msgid "Transfer"
+msgstr "Överföring"
+
+#. module: payment_payson
+#: model_terms:payment.acquirer,pre_msg:payment_payson.payment_acquirer_payson
+msgid ""
+"You will be redirected to the Payson website after clicking on the payment "
+"button."
+msgstr ""
+"Du kommer att omdirigeras till Paysons webbplats efter att ha klickat på "
+"betalningsknappen."
+
+#. module: payment_payson
+#: model_terms:payment.acquirer,auth_msg:payment_payson.payment_acquirer_payson
+msgid "Your payment has been authorized."
+msgstr "Din betalning har blivit auktoriserad."
+
+#. module: payment_payson
+#: model_terms:payment.acquirer,cancel_msg:payment_payson.payment_acquirer_payson
+msgid "Your payment has been cancelled."
+msgstr "Din betalning har avbrutits."
+
+#. module: payment_payson
+#: model_terms:payment.acquirer,pending_msg:payment_payson.payment_acquirer_payson
+msgid ""
+"Your payment has been successfully processed but is waiting for approval."
+msgstr "Din betalning har behandlats men väntar på godkännande."
+
+#. module: payment_payson
+#: model_terms:payment.acquirer,done_msg:payment_payson.payment_acquirer_payson
+msgid "Your payment has been successfully processed. Thank you!"
+msgstr "Din betalning har behandlats. Tack!"
