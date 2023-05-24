@@ -16,9 +16,15 @@
    version="1.1"
    id="SVGRoot"
    sodipodi:docname="icon_140x140.svg"
+<<<<<<< HEAD
    inkscape:export-filename="/run/user/1000/gvfs/sftp:host=odoo14/usr/share/odoo-commerce-pgw/payment_payson/static/description/banner.png"
    inkscape:export-xdpi="93.228012"
    inkscape:export-ydpi="93.228012"
+=======
+   inkscape:export-filename="/usr/share/odoo-user-mail/user_mail_common/static/description/icon.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+>>>>>>> 98ce7930aa1685b952bec2b383f51ac07e49f6c3
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)">
   <defs
      id="defs3475" />
@@ -30,6 +36,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
+<<<<<<< HEAD
      inkscape:cx="-30.393766"
      inkscape:cy="-5.1462001"
      inkscape:document-units="px"
@@ -40,6 +47,19 @@
      inkscape:window-x="806"
      inkscape:window-y="152"
      inkscape:window-maximized="0" />
+=======
+     inkscape:cx="54"
+     inkscape:cy="108.5"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1343"
+     inkscape:window-height="962"
+     inkscape:window-x="2665"
+     inkscape:window-y="180"
+     inkscape:window-maximized="0"
+     inkscape:pagecheckerboard="0" />
+>>>>>>> 98ce7930aa1685b952bec2b383f51ac07e49f6c3
   <metadata
      id="metadata3478">
     <rdf:RDF>
@@ -67,6 +87,7 @@
        style="stroke-width:4.65477753" />
     <text
        xml:space="preserve"
+<<<<<<< HEAD
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15px;line-height:125%;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu, Normal';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.99999994px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        x="70.866776"
        y="91.257576"
@@ -250,4 +271,24 @@
 	.st25{fill:#EB001B;}
 	.st26{fill:#F79E1B;}
 </style>
+=======
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.70189953px;line-height:125%;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu, Normal';text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.99999601px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="70.157249"
+       y="80.818573"
+       id="text2035"
+       inkscape:export-filename="/usr/share/odoo-website-quote/website_quote_contract_project/static/description/icon.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
+         sodipodi:role="line"
+         x="72.970703"
+         y="80.818573"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:24.35899925px;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;stroke-width:0.99999601px"
+         id="tspan5282">Payment </tspan><tspan
+         sodipodi:role="line"
+         x="70.157249"
+         y="101.22292"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:24.35899925px;font-family:Ubuntu;-inkscape-font-specification:'Ubuntu, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;fill:#ffffff;stroke-width:0.99999601px"
+         id="tspan16">Payson</tspan></text>
+  </g>
+>>>>>>> 98ce7930aa1685b952bec2b383f51ac07e49f6c3
 </svg>
