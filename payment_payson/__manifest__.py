@@ -26,7 +26,7 @@
     'description': """Payson Payment Acquirer""",
     'author': 'Vertel AB',
     'license': 'AGPL-3',
-    'website': 'http://www.vertel.se',
+    'website': 'https://vertel.se/apps/odoo-commerce-pgw/payment_payson',
     'depends': ['payment','stock'],
     'data': [
         'views/payson.xml',
