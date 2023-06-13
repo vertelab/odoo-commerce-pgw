@@ -63,6 +63,11 @@ class AcquirerPayson(models.Model):
         first_name = self._partner_split_name(order.partner_id.name)[0]
         last_name = self._partner_split_name(order.partner_id.name)[-1]
 
+        #Currency can be SEK or EUR#
+        currency_name = order.currency_id.name
+        if currency_name != "EUR" and currency_name != "SEK":
+           raise ValidationError(f"Only SEK or EUR are valid currency when using payson not {currency_name}")
+
         payment_data = {
             "merchant": {
                 "checkoutUri": urls.url_join(self.get_base_url(), PaysonController._checkout_url),
@@ -83,7 +88,7 @@ class AcquirerPayson(models.Model):
                 'type': 'person'
             },
             "order": {
-                "currency": "SEK",
+                "currency": currency_name,
                 "items": [
                     {
                         "name": line_item.product_id.name,
@@ -220,5 +225,3 @@ class TxPayson(models.Model):
         tx_to_process.write({'state': target_state, 'date': fields.Datetime.now()})
         self.sale_order_ids.action_cancel()
         tx_to_process._log_payment_transaction_received()
-
-
