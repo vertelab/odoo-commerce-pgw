@@ -63,10 +63,12 @@ class AcquirerPayson(models.Model):
         first_name = self._partner_split_name(order.partner_id.name)[0]
         last_name = self._partner_split_name(order.partner_id.name)[-1]
 
-        #Currency can be SEK or EUR#
+        lang_id = request.env["res.lang"].sudo().search([("code", "=", request.env.lang)], limit=1)
+
+        # Currency can be SEK or EUR#
         currency_name = order.currency_id.name
         if currency_name != "EUR" and currency_name != "SEK":
-           raise ValidationError(f"Only SEK or EUR are valid currency when using payson not {currency_name}")
+            raise ValidationError(f"Only SEK or EUR are valid currency when using payson not {currency_name}")
 
         payment_data = {
             "merchant": {
@@ -99,6 +101,9 @@ class AcquirerPayson(models.Model):
                         "type": "physical" if line_item.product_id.type != "service" else "service",
                     } for line_item in order.order_line
                 ]
+            },
+            "gui": {
+                "locale": lang_id.iso_code if lang_id else "en"
             }
         }
 
