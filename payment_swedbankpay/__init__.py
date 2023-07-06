@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-import payment
-import swedbankpay_controller
+from . import payment
+from . import swedbankpay_controller

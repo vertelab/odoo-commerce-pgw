@@ -49,7 +49,6 @@ class PaymentTransaction(models.Model):
                     order.write({'invoice_type_id': invoice_type_id})
         return super(PaymentTransaction, self).create(values)
     
-    @api.multi
     def write(self, values):
         #~ msg = '\nwrite'
         #~ for key in values:

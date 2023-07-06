@@ -40,7 +40,6 @@ class InvoicePaymentAcquirer(models.Model):
         providers.append(['invoice', _('Invoice')])
         return providers
 
-    @api.multi
     def invoice_get_form_action_url(self):
         return '/payment/invoice/feedback'
 

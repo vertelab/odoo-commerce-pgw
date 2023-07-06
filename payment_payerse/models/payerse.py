@@ -195,7 +195,6 @@ class AcquirerPayerSE(models.Model):
         """Generate and return an md5 cheksum."""
         return hashlib.md5(self.payerse_key_1 + data + self.payerse_key_2).hexdigest()
     
-    @api.multi
     def payerse_form_generate_values(self, partner_values, tx_values):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
@@ -257,12 +256,10 @@ class AcquirerPayerSE(models.Model):
         
         return partner_values, payer_tx_values
     
-    @api.multi
     def payerse_get_form_action_url(self):
         """Returns the url of the button form."""
         return 'https://secure.payer.se/PostAPI_V1/InitPayFlow'
     
-    @api.multi
     def payerse_compute_fees(self, amount, currency_id, country_id):
         """Computes the fee for a transaction.
         Broken. Fee is paid by customer and returned with callback."""

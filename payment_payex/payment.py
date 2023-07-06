@@ -74,18 +74,15 @@ Valid view types – And valid purchaseOperation for those views:
         providers.append(['payex', 'PayEx'])
         return providers
     
-    @api.multi
     def payex_form_generate_values(self, partner_values, tx_values):
         """Method that generates the values used to render the form button template."""
         self.ensure_one()
         return partner_values, tx_values
     
-    @api.multi
     def payex_get_form_action_url(self):
         """Returns the url of the button form."""
         return '/payment/payex/initPayment'
     
-    @api.multi
     def payex_compute_fees(self, amount, currency_id, country_id):
         """TODO: Compute fees."""
         self.ensure_one()
