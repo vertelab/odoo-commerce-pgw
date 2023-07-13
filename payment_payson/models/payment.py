@@ -109,7 +109,9 @@ class AcquirerPayson(models.Model):
 
         payment_request = self._payson_request(
             data=json.dumps(payment_data), endpoint='/checkouts', method='POST')
-
+        _logger.warning("DEBUG"*100)
+        _logger.warning(f"{payment_data}")
+        _logger.warning(f"{payment_request=}")
         if payment_request.get("status") == "created":
             self.env['payment.transaction'].browse(last_tx_id).write({
                 'payson_transaction_id': payment_request.get("id"),
@@ -119,6 +121,10 @@ class AcquirerPayson(models.Model):
             })
             redirect_url = urls.url_join(self.get_base_url(), PaysonController._checkout_url)
             return redirect_url
+        # ~ else:
+            # ~ raise ValidationError(payment_request['errors'][0]['message'])
+            #{'code': 400, 'message': 'Model validation failed.', 'errors': [{'property': 'Order.TotalPriceIncludingTax', 'message': "'Total Price Including Tax' must be greater than or equal to '10'."}]}
+            # ~ raise ValidationError(f"Only SEK or EUR are valid currency when using payson not {currency_name['errors'][0]['message']}")
 
 
 class TxPayson(models.Model):
