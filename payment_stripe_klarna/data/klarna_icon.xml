@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<odoo>
+    <record id="klarna_icon" model="payment.icon">
+        <field name="name">Klarna</field>
+        <!--
+            Klarna icons and marketing material:
+            https://docs.klarna.com/marketing/
+            Eg Logos and guidelines for Sweden:
+            https://docs.klarna.com/marketing/se/advertising-brand-guidelines/logos-trademarks/
+        -->
+        <field name="image" type="base64" file="payment_stripe_klarna/static/img/klarna_badge.svg"/>
+    </record>
+</odoo>

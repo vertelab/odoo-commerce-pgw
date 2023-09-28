@@ -49,20 +49,20 @@
         
 
 
- session <OpenERPSession {'db': 'amber', 'uid': 2, 'login': 'admin', 'session_token': 'e0adb8fc43722e9429d7701737f26dd31f8a3f10116ece8a1dcbeee8a4467038', 
- 'context': {'lang': 'sv_SE', 'tz': 'Europe/Brussels', 'uid': 2},
-  'geoip': {}, 'sale_order_id': 37, 'sale_last_order_id': 37, 'website_sale_current_pl': 1, '__payment_tx_ids__': [2, 3, 4, 37, 12, 13, 14, 22, 23, 24], '__website_sale_last_tx_id': 37}> 
+ # session <OpenERPSession {'db': 'amber', 'uid': 2, 'login': 'admin', 'session_token': 'e0adb8fc43722e9429d7701737f26dd31f8a3f10116ece8a1dcbeee8a4467038',
+ # 'context': {'lang': 'sv_SE', 'tz': 'Europe/Brussels', 'uid': 2},
+ #  'geoip': {}, 'sale_order_id': 37, 'sale_last_order_id': 37, 'website_sale_current_pl': 1, '__payment_tx_ids__': [2, 3, 4, 37, 12, 13, 14, 22, 23, 24], '__website_sale_last_tx_id': 37}>
 
 
 
 
 
-    @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
-    def swedbankpay_cancel(self, **post):
-
-        _logger.warning("~ cancel request %s" % request.httprequest)
-        
-        _logger.warning("~ cancel request args %s" % request.httprequest.args)
+    # @http.route('/payment/swedbankpay/cancel', type='http', auth='none', csrf=False)
+    # def swedbankpay_cancel(self, **post):
+    #
+    #     _logger.warning("~ cancel request %s" % request.httprequest)
+    #
+    #     _logger.warning("~ cancel request args %s" % request.httprequest.args)
         # _logger.warning("~ cancel request form %s" % request.httprequest.form)
         # _logger.warning("~ cancel request values %s" % request.httprequest.values)
         
