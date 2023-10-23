@@ -198,13 +198,18 @@ class TxPayson(models.Model):
             "total_tax_amount": payson_data.get("order")["totalTaxAmount"],
         }
 
-        if payson_data.get("status") not in ["denied", "canceled", "expired"]:
+        if payson_data.get("status") not in ["denied", "canceled"]:
             self.write(payson_vals)
 
             if payson_data.get("status") == "readyToShip":
                 self._set_transaction_done()
             if payson_data.get("status") == "readyToPay":
                 self._set_transaction_pending()
+            if payson_data.get("status") == "expired":
+                self.write({
+                    'state_message': "Customer Payment expired",
+                    "payson_transaction_status": payson_data.get("status"),
+                })
 
             if self.payment_token_id:
                 self.payment_token_id.verified = True
