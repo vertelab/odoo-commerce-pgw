@@ -96,9 +96,10 @@ class AcquirerPayson(models.Model):
                         "name": line_item.product_id.name,
                         "reference": line_item.product_id.default_code or '',
                         "quantity": line_item.product_uom_qty,
-                        "unitPrice": line_item.price_unit,
+                        "unitPrice": line_item.price_total/line_item.product_uom_qty,
                         #"taxRate": line_item.tax_id[0] if line_item.tax_id else 0,
-                        "totalTaxAmount":line_item.price_tax,
+                        "taxRate": (line_item.price_total/line_item.price_subtotal)-1 if line_item.price_subtotal > 0 and (line_item.price_total/line_item.price_subtotal) > 1 else 0,
+                        # ~ "totalTaxAmount":line_item.price_tax,
                         "type": "physical" if line_item.product_id.type != "service" else "service",
                     } for line_item in order.order_line
                 ]
