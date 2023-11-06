@@ -23,9 +23,12 @@
     'version': '1.0',
     'summary': 'Payment Acquirer: Payson Implementation',
     'category': 'Accounting/Payment Acquirers',
-    'description': """Payson Payment Acquirer""",
+    'description': """
+    Payson Payment Acquirer
+    """,
     'author': 'Vertel AB',
     'license': 'AGPL-3',
+    'images': ['static/description/banner.png'], # 560x280 px.
     'website': 'https://vertel.se/apps/odoo-commerce-pgw/payment_payson',
     'depends': ['payment','stock'],
     'data': [
