@@ -25,25 +25,30 @@ class StockPicking(models.Model):
             else:
                 rec.transaction_ids = False
                 rec.authorized_transaction_ids = False
-
+                
     def button_validate(self):
         res = super(StockPicking, self).button_validate()
         done_transactions = self.transaction_ids.filtered(lambda trans: trans.state == 'done')
         for _trans in done_transactions:
-            payment_data = _trans._payson_payment_verification()
+            try:
+               payment_data = _trans._payson_payment_verification()
 
-            payment_data = {
+               payment_data = {
                 "status": "shipped",
                 "id": _trans.payson_transaction_id,
                 "merchant": payment_data.get('merchant'),
                 "customer": payment_data.get('customer'),
                 "order": payment_data.get('order')
-            }
+               }
 
-            _trans.acquirer_id._payson_request(
+               _trans.acquirer_id._payson_request(
                 data=json.dumps(payment_data),
                 endpoint=f"/checkouts/{_trans.payson_transaction_id}",
                 method='PUT'
-            )
+               )
+            except Exception as e:
+                _logger.warning(f"Payson unable to find payson. {e=}")
 
         return res
+
+
