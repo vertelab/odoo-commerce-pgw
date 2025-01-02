@@ -29,8 +29,9 @@ from werkzeug import urls
 
 from odoo.http import request
 from odoo import api, fields, models, _
-from odoo.addons.payment.models.payment_acquirer import ValidationError
-from odoo.addons.payment_paypal.controllers.main import PaypalController
+from odoo.addons.payment.models.payment_provider import ValidationError
+from odoo.exceptions import ValidationError
+#from odoo.addons.payment_paypal.controllers.main import PaypalController
 from odoo.tools.float_utils import float_compare
 
 from odoo.http import request
@@ -41,10 +42,10 @@ _logger = logging.getLogger(__name__)
 import pprint
 import requests
 
-class AcquirerSwedbankPay(models.Model):
-    _inherit = 'payment.acquirer'
+class ProviderSwedbankPay(models.Model):
+    _inherit = 'payment.provider'
 
-    provider = fields.Selection(selection_add=[('swedbankpay', 'Swedbank Pay')])
+    code = fields.Selection(selection_add=[('swedbankpay', 'Swedbank Pay')], ondelete={'swedbankpay': 'set default'})
     swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='swedbankpay')
     swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='swedbankpay')
     swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[

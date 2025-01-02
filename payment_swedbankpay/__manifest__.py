@@ -21,7 +21,7 @@
 ##############################################################################
 {
         'name': 'SwedbankPay Payment Acquirer',
-        'version': '13.0.0.1',
+        'version': '1.0',
         'summary': 'Payment Acquirer: Swedbank Pay Implementation',
         'category': 'Hidden',
         'description': """SwedbankPay Payment Acquirer.""",
@@ -29,11 +29,11 @@
         'license': 'AGPL-3',
         'website': 'http://www.vertel.se',
         'depends': ['payment',"website_sale"],
-        'data': ['swedbankpay.xml',
-                'payment_acquirer.xml',
-                'swedbankpay_data.xml',
-                'res_cnfig_view.xml',
-                'swedbankpay_button_replacer.xml'
+        'data': ['views/swedbankpay.xml',
+                'views/payment_acquirer.xml',
+                'data/swedbankpay_data.xml',
+                'views/res_cnfig_view.xml',
+                'views/swedbankpay_button_replacer.xml'
         ],
         'installable': True,
 }

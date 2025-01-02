@@ -4,7 +4,7 @@
     <!-- web button -->
         <template id="swedbankpay_acquirer_button">
             <form t-att-action="tx_url" method="post" target="_self">
-                <input id="acquirer_swedbankpay" type="hidden" name="acquirer" t-att-value="acquirer.id"/>
+                <input id="acquirer_swedbankpay" type="hidden" name="acquirer" t-att-value="id"/>
                 <!-- <input type="hidden" name="reference" t-att-value="partner_values['reference']" /> -->
                 <!-- <input type="hidden" name="name" t-att-value="partner_values['name']" /> -->
                 <!-- <input type="hidden" name="email" t-att-value="partner_values['email']" /> -->
@@ -38,7 +38,7 @@
                 <input t-if="Swd_returnerror" type="hidden" name='Swd_returnerror' t-att-value="Swd_returnerror" />
                 <input t-if="Swd_returnreject" type="hidden" name='Swd_returnreject' t-att-value="Swd_returnreject" />
                 <input type="hidden" name='add_returndata' t-att-value="add_returndata" />
-                <input id="acquirer_swedbankpay" type="hidden" name="acquirer" t-att-value="acquirer.id"/>
+                <input id="acquirer_swedbankpay" type="hidden" name="acquirer" t-att-value="id"/>
             </div>
         </template>
     </data>

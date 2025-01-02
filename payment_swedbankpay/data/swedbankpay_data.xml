@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="acquirer_swedbankpay" model="payment.acquirer">
+
+        <record id="payment_method_swedbank" model="payment.method">
+             <field name="name">Swedbank</field>
+             <field name="code">swedbank</field>
+             <field name="sequence">20</field>
+             <field name="active">False</field>
+             <field name="image" type="base64" file="payment_swedbankpay/static/src/img/swedbankpay_icon.png"/>
+        </record>
+
+
+
+        <record id="acquirer_swedbankpay" model="payment.provider">
             <field name="name">Swedbank Pay</field>
             <field name="image_128" type="base64" file="payment_swedbankpay/static/src/img/swedbankpay_icon.png" />
-            <field name="provider">swedbankpay</field>
+            <field name="code">swedbankpay</field>
             <field name="company_id" ref="base.main_company" />
-            <field name="view_template_id" ref="swedbankpay_form" />
+            <field name="redirect_form_view_id" ref="swedbankpay_form" />
             <field name="sequence">2</field>
             <field name="module_id">1</field>
             <field name="module_state">installed</field>
-            <field name="description" type="html">
-            <!-- USE THIS FIELD TO SAY THAT THIS THIS IS NOT INSTALLED!!!! -->
-            
-                <p>
-                    SWEDBANKPAY.
-                </p>
-            </field>
+                    <field name="payment_method_ids"
+                     eval="[Command.set([
+                         ref('payment_swedbankpay.payment_method_swedbank'),
+                     ])]"
+            />
+
             <!-- <field name="environment">test</field> -->
             <!-- <field name="pre_msg">
                 <![CDATA[

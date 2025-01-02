@@ -3,11 +3,11 @@
     <data>
         <record id="acquirer_form_swedbankpay" model="ir.ui.view">
             <field name="name">acquirer.form.swedbankpay</field>
-            <field name="model">payment.acquirer</field>
-            <field name="inherit_id" ref="payment.acquirer_form" />
+            <field name="model">payment.provider</field>
+            <field name="inherit_id" ref="payment.payment_provider_form"/>
             <field name="arch" type="xml">
-                <xpath expr='//group[@name="acquirer"]' position='inside'>
-                    <group attrs="{'invisible': [('provider', '!=', 'swedbankpay')]}">
+                <group name="provider_credentials" position="inside">
+                    <group  invisible="code != 'swedbankpay'">
                         <field name="swedbankpay_merchant_id" />
                         <field name="swedbankpay_account_nr" />
                         <field name="swedbankpay_view" />
@@ -15,7 +15,7 @@
                              <a colspan="2" href="https://www.odoo.com/documentation/user/online/ecommerce/shopper_experience/paypal.html" target="_blank">How to configure your paypal account?</a>
                         -->
                     </group>
-                </xpath>
+                </group>
             </field>
         </record>
     </data>

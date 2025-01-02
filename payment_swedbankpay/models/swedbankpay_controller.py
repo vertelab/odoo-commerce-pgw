@@ -27,26 +27,26 @@ import time
 import werkzeug
 
 from odoo import models, fields, api, _
-from odoo.exceptions import Warning, UserError
+from odoo.exceptions import UserError
 from odoo import http
 from odoo.http import request
 #/usr/share/core-odoo/addons/website_sale/controllers/main.py
 from odoo.addons.website_sale.controllers.main import WebsiteSale
-from odoo.addons.payment.controllers.portal import PaymentProcessing
+#from odoo.addons.payment.controllers.portal import PaymentProcessing
 
 _logger = logging.getLogger(__name__)
 
 
 class SwedbankPayController(WebsiteSale):
 
-    @http.route('/shop/payment/swedbankpay/validate', type="json", auth='none')
+    @http.route('/shop/payment/swedbankpay/validate', methods=['GET', 'POST'], type="json", auth='none')
     def swedbankpay_validate(self, **post):
         _logger.warning("\n"*2 + "~"*25 + 'Validate' + '~'*25)
         _logger.warning(post)
         return "hello there"
 
     # is called if user directly decline the payment in the redirect link 
-    @http.route('/payment/swedbankpay/cancel/<transaction_id>', type='http', auth='none', csrf=False)
+    @http.route('/payment/swedbankpay/cancel/<transaction_id>', methods=['GET', 'POST'], type='http', auth='none', csrf=False)
     def swedbankpay_cancel(self, transaction_id, **post):
         _logger.info("\n"*2 + "~"*25 + 'Cancel' + '~'*25)
         _logger.info(f'Cancel of transaction id: {transaction_id}')
@@ -54,7 +54,7 @@ class SwedbankPayController(WebsiteSale):
         tx.state = 'cancel'
         return werkzeug.utils.redirect(f'{request.httprequest.host_url}shop')
 
-    @http.route('/payment/swedbankpay/callback/<transaction_id>', type='json', auth='none', csrf=False, method='POST')
+    @http.route('/payment/swedbankpay/callback/<transaction_id>',methods=['GET', 'POST'], type='json', auth='none', csrf=False)
     def swedbankpay_callback(self, transaction_id, **post):
         _logger.debug('~'*25 + 'Calback' + '~'*25)
         data = json.loads(request.httprequest.data)
@@ -67,7 +67,7 @@ class SwedbankPayController(WebsiteSale):
             _logger.warning(f'Callback could not find associated transaction: {transaction_id}')
             return
 
-        if not tx.provider == 'swedbankpay':
+        if not tx.provider_code == 'swedbankpay':
             _logger.warning('Swedbankpay controller received callback not associated to swedbankpay: {tx.provider}')
             return 
 
@@ -129,7 +129,7 @@ class SwedbankPayController(WebsiteSale):
         return "Callback received succesfully"
 
     # Use the unique id that was sent in  values["complete_url"] 
-    @http.route('/payment/swedbankpay/verify/<transaction_id>', type='http', auth='public', method='POST', website=True, sitemap=False)
+    @http.route('/payment/swedbankpay/verify/<transaction_id>', methods=['GET', 'POST'], type='http', auth='public', website=True, sitemap=False)
     def auth_swedbankpay(self, transaction_id ,**post):
         _logger.warning("\n"*2 + "~"*25 + "auth_swedbankpay" + "~"*25)
         _logger.warning(f'Transaction id: {transaction_id}')
@@ -192,7 +192,7 @@ class SwedbankPayController(WebsiteSale):
             try:
                 _logger.info(f'Cleaning up transaction {transaction_id}')
                 request.website.sale_reset()
-                PaymentProcessing.remove_payment_transaction(tx)
+                #PaymentProcessing.remove_payment_transaction(tx)
                 self.complete_transaction(tx, mail=True)
 
             finally:
@@ -217,7 +217,7 @@ class SwedbankPayController(WebsiteSale):
             tx.state = 'error'
             return request.render("payment_swedbankpay.unexpected")
 
-    @http.route(['/payment/swedbankpay/init'], auth='public', website=True, csrf=False, type='http')
+    @http.route(['/payment/swedbankpay/init'], auth='public',methods=['GET', 'POST'], website=True, csrf=False, type='http')
     def init_swedbankpay(self, **post):
         tx_id = request.session.get('__website_sale_last_tx_id')
         if not tx_id:
@@ -370,7 +370,7 @@ class SwedbankPayController(WebsiteSale):
     def remove_context(self, tx):
         tx = request.env['payment.transaction'].sudo().browse(transaction_id)
         request.website.sale_reset()
-        remove_tx = PaymentProcessing.remove_payment_transaction(tx)
+        #remove_tx = PaymentProcessing.remove_payment_transaction(tx)
 
     def remove_sale_order_from_session(self): 
         request.session.pop("sale_order_id")
