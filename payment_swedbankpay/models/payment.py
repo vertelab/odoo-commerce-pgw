@@ -86,7 +86,7 @@ Valid view types – And valid purchaseOperation for those views:
     swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
     swedbankpay_key = "example_swedbank_paykey_artur_example"
 
-    def swedbankpay_form_generate_values(self, values):
+    def swedbankpay_form_generate_values_depricated(self, values):
         _logger.warn("~ %s " % "swedbankpay_form_generate_values")
         base_url = request.httprequest.url_root
 
@@ -125,12 +125,12 @@ Valid view types – And valid purchaseOperation for those views:
 
 
     # TODO: Dont know if this can be used 
-    def swedbankpay_get_form_action_url(self):
+    def swedbankpay_get_form_action_url_depricated(self):
         """Returns the url of the button form."""
         return '/payment/swedbankpay/init'
 
     # TODO: Compute fees?
-    def swedbankpay_compute_fees(self, amount, currency_id, country_id):
+    def swedbankpay_compute_fees_depricated(self, amount, currency_id, country_id):
         self.ensure_one()
         if not self.fees_active:
             return 0.0
@@ -139,15 +139,129 @@ Valid view types – And valid purchaseOperation for those views:
 class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
     swedbankpay_transaction_uri = fields.Char('Swedbank pay transaction URI')
+       
+    def _get_processing_values(self):
+		_logger.warning("_get_processing_values"*100)
+        """ Return the values used to process the transaction.
+
+        The values are returned as a dict containing entries with the following keys:
+
+        - `provider_id`: The provider handling the transaction, as a `payment.provider` id.
+        - `provider_code`: The code of the provider.
+        - `reference`: The reference of the transaction.
+        - `amount`: The rounded amount of the transaction.
+        - `currency_id`: The currency of the transaction, as a `res.currency` id.
+        - `partner_id`: The partner making the transaction, as a `res.partner` id.
+        - Additional provider-specific entries.
+
+        Note: `self.ensure_one()`
+
+        :return: The processing values.
+        :rtype: dict
+        """
+        self.ensure_one()
+
+        processing_values = {
+            'provider_id': self.provider_id.id,
+            'provider_code': self.provider_code,
+            'reference': self.reference,
+            'amount': self.amount,
+            'currency_id': self.currency_id.id,
+            'partner_id': self.partner_id.id,
+        }
+        _logger.warning(f"{processing_values=}")
+
+        # Complete generic processing values with provider-specific values.
+        processing_values.update(self._get_specific_processing_values(processing_values))
+        _logger.info(
+            "generic and provider-specific processing values for transaction with reference "
+            "%(ref)s:\n%(values)s",
+            {'ref': self.reference, 'values': pprint.pformat(processing_values)},
+        )
+
+        # Render the html form for the redirect flow if available.
+        if self.operation in ('online_redirect', 'validation'):
+            redirect_form_view = self.provider_id._get_redirect_form_view(
+                is_validation=self.operation == 'validation'
+            )
+            if redirect_form_view:  # Some provider don't need a redirect form.
+                rendering_values = self._get_specific_rendering_values(processing_values)
+                _logger.info(
+                    "provider-specific rendering values for transaction with reference "
+                    "%(ref)s:\n%(values)s",
+                    {'ref': self.reference, 'values': pprint.pformat(rendering_values)},
+                )
+                redirect_form_html = self.env['ir.qweb']._render(redirect_form_view.id, rendering_values)
+                processing_values.update(redirect_form_html=redirect_form_html)
+        _logger.warning(f"2{processing_values=}")
+        return processing_values
+
+    def _get_specific_processing_values(self, processing_values):
+        """ Return a dict of provider-specific values used to process the transaction.
+
+        For a provider to add its own processing values, it must overwrite this method and return a
+        dict of provider-specific values based on the generic values returned by this method.
+        Provider-specific values take precedence over those of the dict of generic processing
+        values.
+
+        :param dict processing_values: The generic processing values of the transaction.
+        :return: The dict of provider-specific processing values.
+        :rtype: dict
+        """
+        return dict()
+
+    def _get_specific_rendering_values(self, processing_values):
+        """ Return a dict of provider-specific values used to render the redirect form.
+
+        For a provider to add its own rendering values, it must overwrite this method and return a
+        dict of provider-specific values based on the processing values (provider-specific
+        processing values included).
+
+        :param dict processing_values: The processing values of the transaction.
+        :return: The dict of provider-specific rendering values.
+        :rtype: dict
+        """
+        return dict()
+
+    def _get_mandate_values(self):
+        """ Return a dict of module-specific values used to create a mandate.
+
+        For a module to add its own mandate values, it must overwrite this method and return a dict
+        of module-specific values.
+
+        Note: `self.ensure_one()`
+
+        :return: The dict of module-specific mandate values.
+        :rtype: dict
+        """
+        self.ensure_one()
+        return dict()
+
+    def _send_payment_request(self):
+        """ Request the provider handling the transaction to make the payment.
+
+        This method is exclusively used to make payments by token, which correspond to both the
+        `online_token` and the `offline` transaction's `operation` field.
+
+        For a provider to support tokenization, it must override this method and make an API request
+        to make a payment.
+
+        Note: `self.ensure_one()`
+
+        :return: None
+        """
+        self.ensure_one()
+        self._ensure_provider_is_not_disabled()
+        self._log_sent_message()
 
     @api.model
-    def _swedbankpay_form_get_tx_from_data(self, data):
+    def _swedbankpay_form_get_tx_from_data_depricated(self, data):
         ref = data.get('orderRef') or self._context.get('orderRef')
         if ref:
             return self.env['payment.transaction'].search(
                 [('acquirer_reference', '=', ref)])
 
-    def _swedbankpay_form_get_invalid_parameters(self, tx, data):
+    def _swedbankpay_form_get_invalid_parameters_depricated(self, tx, data):
         invalid_parameters = []
         status = data.get('status')
         if not status:
@@ -162,11 +276,11 @@ class TxSwedbankPay(models.Model):
             invalid_parameters.append(('transactionStatus', 'None', 'A value'))
         return invalid_parameters
 
-    def _swedbankpay_form_validate(self, tx, data):
+    def _swedbankpay_form_validate_depricated(self, tx, data):
         if data.get('transactionStatus') not in ['0', '3']:
             return False
         return tx.write({'state': 'done', 'date_validate': fields.Datetime.now()})
 
-    def swedbankpay_create(self, values):
+    def swedbankpay_create_depricated(self, values):
         #acquirer = self.env['payment.acquirer'].browse(values['acquirer_id'])
         return values
