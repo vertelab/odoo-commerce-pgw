@@ -138,10 +138,10 @@ Valid view types – And valid purchaseOperation for those views:
 
 class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
+
     swedbankpay_transaction_uri = fields.Char('Swedbank pay transaction URI')
        
     def _get_processing_values(self):
-		_logger.warning("_get_processing_values"*100)
         """ Return the values used to process the transaction.
 
         The values are returned as a dict containing entries with the following keys:
@@ -160,6 +160,7 @@ class TxSwedbankPay(models.Model):
         :rtype: dict
         """
         self.ensure_one()
+        _logger.warning("_get_processing_values" * 100)
 
         processing_values = {
             'provider_id': self.provider_id.id,
