@@ -37,10 +37,12 @@ from odoo.tools.float_utils import float_compare
 from odoo.http import request
 
 import logging
+
 _logger = logging.getLogger(__name__)
 
 import pprint
 import requests
+
 
 class ProviderSwedbankPay(models.Model):
     _inherit = 'payment.provider'
@@ -49,22 +51,22 @@ class ProviderSwedbankPay(models.Model):
     swedbankpay_merchant_id = fields.Char('Swedbank Merchant ID', required_if_provider='swedbankpay')
     swedbankpay_account_nr = fields.Char('Merchant Account #', required_if_provider='swedbankpay')
     swedbankpay_view = fields.Selection(string='SwedbankPay View', selection=[
-        ('DIRECTDEBIT', 'DIRECTDEBIT'), #(Direct bank) – SALE
-        ('IDEAL', 'IDEAL'), #(Direct bank) – SALE
-        ('CPA', 'CPA'), #(Norwegian and Swedish overcharged SMS) – SALE
-        ('CREDITCARD', 'CREDITCARD'), #(Credit Card) – AUTHORIZATION/SALE
-        ('PX', 'PX'), #(PayEx account, WyWallet) – AUTHORIZATION/SALE
-        ('MICROACCOUNT', 'MICROACCOUNT'), #(PayEx account, WyWallet) – AUTHORIZATION/SALE
-        ('PAYPAL', 'PAYPAL'), #(PayPal transactions) – AUTHORIZATION/SALE
-        ('INVOICE', 'INVOICE'), #(Ledger Service) – AUTHORIZATION/SALE
-        ('EVC', 'EVC'), #(Value code) – AUTHORIZATION/SALE
-        ('LOAN', 'LOAN'), #– AUTHORIZATION/SALE
-        ('GC', 'GC'), #(Gift card / generic card) – AUTHORIZATION/SALE
-        ('CA', 'CA'), #(Credit account) – AUTHORIZATION/SALE
-        ('FINANCING', 'FINANCING'), #– AUTHORIZATION/SALE
-        ('CREDITACCOUNT', 'CREDITACCOUNT'), #– AUTHORIZATION/SALE
-        ('PREMIUMSMS', 'PREMIUMSMS'), #– SALE
-        ('SWISH', 'SWISH'), #– SALE
+        ('DIRECTDEBIT', 'DIRECTDEBIT'),  #(Direct bank) – SALE
+        ('IDEAL', 'IDEAL'),  #(Direct bank) – SALE
+        ('CPA', 'CPA'),  #(Norwegian and Swedish overcharged SMS) – SALE
+        ('CREDITCARD', 'CREDITCARD'),  #(Credit Card) – AUTHORIZATION/SALE
+        ('PX', 'PX'),  #(PayEx account, WyWallet) – AUTHORIZATION/SALE
+        ('MICROACCOUNT', 'MICROACCOUNT'),  #(PayEx account, WyWallet) – AUTHORIZATION/SALE
+        ('PAYPAL', 'PAYPAL'),  #(PayPal transactions) – AUTHORIZATION/SALE
+        ('INVOICE', 'INVOICE'),  #(Ledger Service) – AUTHORIZATION/SALE
+        ('EVC', 'EVC'),  #(Value code) – AUTHORIZATION/SALE
+        ('LOAN', 'LOAN'),  #– AUTHORIZATION/SALE
+        ('GC', 'GC'),  #(Gift card / generic card) – AUTHORIZATION/SALE
+        ('CA', 'CA'),  #(Credit account) – AUTHORIZATION/SALE
+        ('FINANCING', 'FINANCING'),  #– AUTHORIZATION/SALE
+        ('CREDITACCOUNT', 'CREDITACCOUNT'),  #– AUTHORIZATION/SALE
+        ('PREMIUMSMS', 'PREMIUMSMS'),  #– SALE
+        ('SWISH', 'SWISH'),  #– SALE
     ], default='CREDITCARD', help="""Default payment method.
 Valid view types – And valid purchaseOperation for those views:
 * DIRECTDEBIT (Direct bank) – SALE
@@ -91,12 +93,12 @@ Valid view types – And valid purchaseOperation for those views:
         base_url = request.httprequest.url_root
 
         currency_name = self.env['res.currency'].search([
-            ("id","=",str(values['currency_id']))
+            ("id", "=", str(values['currency_id']))
         ]).name
 
         sale_order_id = str(values['reference']).split("-")[0]
         sale_order_amount_tax = self.env['sale.order'].search([
-            ('name','=',sale_order_id)
+            ('name', '=', sale_order_id)
         ]).amount_tax
 
         swedbankpay_tx_values = dict(values)
@@ -104,27 +106,26 @@ Valid view types – And valid purchaseOperation for those views:
         _logger.warning("~ SWEDBANKPAY FORM GENERATE VALUE %s " % swedbankpay_tx_values)
 
         swedbankpay_tx_values.update({
-            'swd_currency_name': str(currency_name), 
-            'Swd_amount' : int(values['amount'] * 100),
-            'swd_vatAmount': int(sale_order_amount_tax * 100), 
-            'swd_refernce' : values['reference'],
-            'test' : 'TEST_VAL'
+            'swd_currency_name': str(currency_name),
+            'Swd_amount': int(values['amount'] * 100),
+            'swd_vatAmount': int(sale_order_amount_tax * 100),
+            'swd_refernce': values['reference'],
+            'test': 'TEST_VAL'
 
-             # 'Swd_merchant_id': self.swedbankpay_merchant_id,
-             # 'Swd_account_nr': self.swedbankpay_account_nr,
-             # 'Swd_view': self.swedbankpay_view,
-             # 'Swd_currency': values['currency'] and values['currency'].name or '',
-             # 'Swd_invoicenumber': values['reference'],
-             # 'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
-             # 'payeeReference': tx.reference,
-             # 'swedbankpayKey': tx.acquirer_id.swedbankpay_account_nr, 
-             # 'orderReference': tx.reference, #Should be some other reference? 
-         })
+            # 'Swd_merchant_id': self.swedbankpay_merchant_id,
+            # 'Swd_account_nr': self.swedbankpay_account_nr,
+            # 'Swd_view': self.swedbankpay_view,
+            # 'Swd_currency': values['currency'] and values['currency'].name or '',
+            # 'Swd_invoicenumber': values['reference'],
+            # 'payeeId': tx.acquirer_id.swedbankpay_merchant_id,
+            # 'payeeReference': tx.reference,
+            # 'swedbankpayKey': tx.acquirer_id.swedbankpay_account_nr,
+            # 'orderReference': tx.reference, #Should be some other reference?
+        })
 
         return swedbankpay_tx_values
 
-
-    # TODO: Dont know if this can be used 
+    # TODO: Dont know if this can be used
     def swedbankpay_get_form_action_url_depricated(self):
         """Returns the url of the button form."""
         return '/payment/swedbankpay/init'
@@ -136,11 +137,12 @@ Valid view types – And valid purchaseOperation for those views:
             return 0.0
         return 0.0
 
+
 class TxSwedbankPay(models.Model):
     _inherit = 'payment.transaction'
 
     swedbankpay_transaction_uri = fields.Char('Swedbank pay transaction URI')
-       
+
     def _get_processing_values(self):
         """ Return the values used to process the transaction.
 

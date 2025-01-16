@@ -18,6 +18,8 @@
                 </button>
             </form>
         </template>
+
+
         <template id="swedbankpay_form">
 <!--
 			<div> added form since the javascript seems to be looking for a form.

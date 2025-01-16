@@ -20,22 +20,27 @@
 # ~ 'external_dependencies': {'python': ['swedbankpay']},
 ##############################################################################
 {
-        'name': 'SwedbankPay Payment Acquirer',
-        'version': '1.0',
-        'summary': 'Payment Acquirer: Swedbank Pay Implementation',
-        'category': 'Hidden',
-        'description': """SwedbankPay Payment Acquirer.""",
-        'author': 'Vertel AB',
-        'license': 'AGPL-3',
-        'website': 'http://www.vertel.se',
-        'depends': ['payment',"website_sale"],
-        'data': ['views/swedbankpay.xml',
-                'views/payment_acquirer.xml',
-                'data/swedbankpay_data.xml',
-                'views/res_cnfig_view.xml',
-                'views/swedbankpay_button_replacer.xml'
-        ],
-        'installable': True,
+
+    'name': 'SwedbankPay Payment Acquirer',
+    'version': '1.0',
+    'summary': 'Payment Acquirer: Swedbank Pay Implementation',
+    'category': 'Hidden',
+    'description': """SwedbankPay Payment Acquirer.""",
+    'author': 'Vertel AB',
+    'license': 'AGPL-3',
+    'website': 'http://www.vertel.se',
+    'depends': ['payment', "website_sale"],
+    'data': [
+        'views/swedbankpay.xml',
+        'views/payment_acquirer.xml',
+        'views/swedbankpay_templates.xml',
+        'data/swedbankpay_data.xml',
+        # 'views/res_cnfig_view.xml',
+        'views/swedbankpay_button_replacer.xml'
+    ],
+    'post_init_hook': 'post_init_hook',
+    'uninstall_hook': 'uninstall_hook',
+    'installable': True,
 }
 
 # vim:expandtab:smartindent:tabstop=4s:softtabstop=4:shiftwidth=4:
