@@ -120,7 +120,7 @@ Valid view types – And valid purchaseOperation for those views:
                 response = requests.get(url, data=payload, headers=headers, timeout=10)
             else:
                 response = requests.post(url, data=payload, headers=headers, timeout=10)
-                print("response", response.text)
+                _logger.warning("response", response.text)
             try:
                 response.raise_for_status()
             except requests.exceptions.HTTPError:

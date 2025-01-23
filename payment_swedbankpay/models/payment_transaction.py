@@ -43,8 +43,6 @@ class TxSwedbankPay(models.Model):
         # Initiate the payment and retrieve the payment link data.
         payment_order = self._swedbankpay_create_order()
 
-        print("payment_order", payment_order)
-
         payment_link_data = list(filter(
             lambda operation: operation.get('rel') == 'redirect-checkout', payment_order.get('operations')
         ))[0]
@@ -91,7 +89,7 @@ class TxSwedbankPay(models.Model):
                 "operation": "Purchase",
                 "currency": self.currency_id.name,
                 "amount": int(self.amount * 100),
-                "vatAmount": 0,
+                "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
                 "description": f"Odoo Payment ({self.reference})",
                 "userAgent": "Mozilla/5.0...",
                 "language": "sv-SE",
@@ -142,11 +140,12 @@ class TxSwedbankPay(models.Model):
             "Sending '/psp/paymentorders/{id}/captures' request for transaction with reference %s",
             self.reference
         )
+
         payload = json.dumps({
             "transaction": {
                 "description": f"Authorized payment capture for {self.reference}",
                 "amount": int(self.amount * 100),
-                "vatAmount": 0,
+                "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
                 "payeeReference": f"{self.reference.replace('-', '')}{self.reference.replace('-', '')}",
                 "receiptReference": self.reference,
                 "orderItems": [{
@@ -155,10 +154,11 @@ class TxSwedbankPay(models.Model):
                     "class": line.product_id.categ_id.name.replace(' ', ''),
                     "quantity": line.product_uom_qty,
                     "quantityUnit": "pcs",
-                    "unitPrice": int(line.price_total * 100),
-                    "vatPercent": 0,
+                    "unitPrice": int(line.price_unit * 100),
+                    #"vatPercent": int((line.price_total/line.price_subtotal)-1 if line.price_subtotal > 0 and (line.price_total/line.price_subtotal) > 1 else 0),
+                    "vatPercent": int((round(line.price_total/line.price_subtotal, 2)-1)*10000) if line.price_total and line.price_subtotal else 0,
                     "amount": int(line.price_total * 100),
-                    "vatAmount": 0,
+                    "vatAmount": int((round(line.price_total - line.price_subtotal, 2)) * 100),
                     "reference": line.product_id.default_code.replace(' ', '') if line.product_id.default_code else line.product_id.name.replace(' ', '')
 
                 } for line in self.sale_order_ids[0].order_line]
@@ -167,7 +167,7 @@ class TxSwedbankPay(models.Model):
         capture_data = self.provider_id._swedbankpay_make_request(
             f'/psp/paymentorders/{self.provider_reference}/captures', payload=payload
         )
-        print("capture_data", capture_data)
+        _logger.warning("capture_data", capture_data)
         return capture_data
 
     def _process_notification_data(self, notification_data):
@@ -189,7 +189,7 @@ class TxSwedbankPay(models.Model):
 
         order_status = order_status_request.get('paymentOrder')
 
-        print("_process_notification_data order_status", pprint.pformat(order_status))
+        _logger.warning("_process_notification_data order_status", pprint.pformat(order_status))
 
         self.payment_method_id = self.env['payment.method'].search(
             [('code', '=', 'swedbankpay')], limit=1
