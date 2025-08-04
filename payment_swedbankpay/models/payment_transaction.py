@@ -1,7 +1,8 @@
 import logging
 import pprint
 import json
-
+import re
+import time
 import requests
 from werkzeug.urls import url_join
 from odoo import _, api, fields, models
@@ -102,7 +103,7 @@ class TxSwedbankPay(models.Model):
                 },
                 "payeeInfo": {
                     "payeeId": self.provider_id.swedbankpay_merchant_id,
-                    "payeeReference": self.reference.replace('-', ''),
+                    "payeeReference": f"{self.reference.replace('-', '')}{int(time.time())}",
                     "payeeName": self.partner_name,
                     "orderReference": self.reference
                 }
@@ -135,6 +136,9 @@ class TxSwedbankPay(models.Model):
             )
         return tx
 
+    def sanitize_reference(self, text):
+        return re.sub(r'[^\w]', '', text) if text else ''
+
     def _swedbankpay_post_purchase_capture(self):
         _logger.info(
             "Sending '/psp/paymentorders/{id}/captures' request for transaction with reference %s",
@@ -146,7 +150,9 @@ class TxSwedbankPay(models.Model):
                 "description": f"Authorized payment capture for {self.reference}",
                 "amount": int(self.amount * 100),
                 "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
-                "payeeReference": f"{self.reference.replace('-', '')}{self.reference.replace('-', '')}",
+                # "payeeReference": f"{self.reference.replace('-', '')}{self.reference.replace('-', '')}",
+                "payeeReference": f"{self.sanitize_reference(self.reference)}{self.sanitize_reference(self.reference)}",
+                #"payeeReference": f"{self.reference.replace('-', '')}",
                 "receiptReference": self.reference,
                 "orderItems": [{
                     "name": line.product_id.name,
@@ -156,10 +162,14 @@ class TxSwedbankPay(models.Model):
                     "quantityUnit": "pcs",
                     "unitPrice": int(line.price_unit * 100),
                     #"vatPercent": int((line.price_total/line.price_subtotal)-1 if line.price_subtotal > 0 and (line.price_total/line.price_subtotal) > 1 else 0),
-                    "vatPercent": int((round(line.price_total/line.price_subtotal, 2)-1)*10000) if line.price_total and line.price_subtotal else 0,
+                    "vatPercent": int(
+                        (round(line.price_total/line.price_subtotal, 2)-1)*10000
+                    ) if line.price_total and line.price_subtotal else 0,
                     "amount": int(line.price_total * 100),
                     "vatAmount": int((round(line.price_total - line.price_subtotal, 2)) * 100),
-                    "reference": line.product_id.default_code.replace(' ', '') if line.product_id.default_code else line.product_id.name.replace(' ', '')
+                    "reference": self.sanitize_reference(
+                        line.product_id.default_code if line.product_id.default_code else line.product_id.name)
+                    # "reference": re.sub(r'[^a-zA-Z0-9]', '',line.product_id.default_code) if line.product_id.default_code else re.sub(r'[^a-zA-Z0-9]', '',line.product_id.name),
 
                 } for line in self.sale_order_ids[0].order_line]
             }
