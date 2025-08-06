@@ -8,7 +8,7 @@ SUPPORTED_CURRENCIES = [
 
 # Mapping of transaction states to Swedbankpay payment statuses.
 PAYMENT_STATUS_MAPPING = {
-    'pending': ['pending auth', 'ready'],
+    'pending': ['pending auth', 'ready', 'initialized'],
     'done': ['successful', 'paid'],
     'cancel': ['cancelled', 'aborted'],
     'error': ['failed'],

@@ -65,13 +65,13 @@ class TxSwedbankPay(models.Model):
         """
         payload = self._swedbankpay_prepare_order_payload(customer_id=customer_id)
         _logger.info(
-            "Sending '/psp/paymentorders' request for transaction with reference %s:\n%s",
-            self.reference, pprint.pformat(payload)
+            f"Sending '/psp/paymentorders' request for transaction with reference "
+            f"{self.reference}:\n{pprint.pformat(payload)}",
         )
         order_data = self.provider_id._swedbankpay_make_request('/psp/paymentorders', payload=payload)
         _logger.info(
-            "Response of '/psp/paymentorders' request for transaction with reference %s:\n%s",
-            self.reference, pprint.pformat(order_data)
+            f"Response of '/psp/paymentorders' request for transaction with reference "
+            f"{self.reference}:\n{pprint.pformat(order_data)}",
         )
         return order_data
 
@@ -141,8 +141,8 @@ class TxSwedbankPay(models.Model):
 
     def _swedbankpay_post_purchase_capture(self):
         _logger.info(
-            "Sending '/psp/paymentorders/{id}/captures' request for transaction with reference %s",
-            self.reference
+            f"Sending '/psp/paymentorders/{self.provider_reference}/captures' request "
+            f"for transaction with reference {self.reference}",
         )
 
         payload = json.dumps({
@@ -177,7 +177,7 @@ class TxSwedbankPay(models.Model):
         capture_data = self.provider_id._swedbankpay_make_request(
             f'/psp/paymentorders/{self.provider_reference}/captures', payload=payload
         )
-        _logger.warning("capture_data", capture_data)
+        _logger.warning(f"capture_data: {capture_data}")
         return capture_data
 
     def _process_notification_data(self, notification_data):
@@ -199,7 +199,7 @@ class TxSwedbankPay(models.Model):
 
         order_status = order_status_request.get('paymentOrder')
 
-        _logger.warning("_process_notification_data order_status", pprint.pformat(order_status))
+        _logger.warning(f"_process_notification_data order_status: {pprint.pformat(order_status)}")
 
         self.payment_method_id = self.env['payment.method'].search(
             [('code', '=', 'swedbankpay')], limit=1
@@ -220,7 +220,6 @@ class TxSwedbankPay(models.Model):
             ))
         else:
             _logger.warning(
-                "Received data with invalid payment status (%s) for transaction with reference %s.",
-                payment_status, self.reference
+                f"Received data with invalid payment status {payment_status} for transaction with reference {self.reference}."
             )
             self._set_error("Swedbankpay: " + _("Unknown payment status: %s", payment_status))
