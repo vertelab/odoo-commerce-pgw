@@ -92,7 +92,7 @@ class TxSwedbankPay(models.Model):
                 "amount": int(self.amount * 100),
                 "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
                 "description": f"Odoo Payment ({self.reference})",
-                "userAgent": "Mozilla/5.0...",
+                "userAgent": request.httprequest.headers.get('User-Agent', 'Mozilla/5.0'),
                 "language": "sv-SE",
                 "urls": {
                     "hostUrls": [base_url],
