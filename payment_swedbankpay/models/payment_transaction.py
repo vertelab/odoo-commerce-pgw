@@ -64,14 +64,16 @@ class TxSwedbankPay(models.Model):
         :rtype: dict
         """
         payload = self._swedbankpay_prepare_order_payload(customer_id=customer_id)
+
         _logger.info(
             f"Sending '/psp/paymentorders' request for transaction with reference "
             f"{self.reference}:\n{pprint.pformat(payload)}",
         )
+
         order_data = self.provider_id._swedbankpay_make_request('/psp/paymentorders', payload=payload)
         _logger.info(
-            f"Response of '/psp/paymentorders' request for transaction with reference "
-            f"{self.reference}:\n{pprint.pformat(order_data)}",
+            "Response of '/psp/paymentorders' request for transaction with reference %s:\n%s",
+            self.reference, pprint.pformat(order_data)
         )
         return order_data
 
@@ -92,6 +94,7 @@ class TxSwedbankPay(models.Model):
                 "amount": int(self.amount * 100),
                 "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
                 "description": f"Odoo Payment ({self.reference})",
+                #"userAgent": "Mozilla/5.0...",
                 "userAgent": request.httprequest.headers.get('User-Agent', 'Mozilla/5.0'),
                 "language": "sv-SE",
                 "urls": {
@@ -141,8 +144,8 @@ class TxSwedbankPay(models.Model):
 
     def _swedbankpay_post_purchase_capture(self):
         _logger.info(
-            f"Sending '/psp/paymentorders/{self.provider_reference}/captures' request "
-            f"for transaction with reference {self.reference}",
+            "Sending '/psp/paymentorders/{id}/captures' request for transaction with reference %s",
+            self.reference
         )
 
         payload = json.dumps({
@@ -162,9 +165,7 @@ class TxSwedbankPay(models.Model):
                     "quantityUnit": "pcs",
                     "unitPrice": int(line.price_unit * 100),
                     #"vatPercent": int((line.price_total/line.price_subtotal)-1 if line.price_subtotal > 0 and (line.price_total/line.price_subtotal) > 1 else 0),
-                    "vatPercent": int(
-                        (round(line.price_total/line.price_subtotal, 2)-1)*10000
-                    ) if line.price_total and line.price_subtotal else 0,
+                    "vatPercent": int((round(line.price_total/line.price_subtotal, 2)-1)*10000) if line.price_total and line.price_subtotal else 0,
                     "amount": int(line.price_total * 100),
                     "vatAmount": int((round(line.price_total - line.price_subtotal, 2)) * 100),
                     "reference": self.sanitize_reference(
@@ -221,5 +222,6 @@ class TxSwedbankPay(models.Model):
         else:
             _logger.warning(
                 f"Received data with invalid payment status {payment_status} for transaction with reference {self.reference}."
+                
             )
             self._set_error("Swedbankpay: " + _("Unknown payment status: %s", payment_status))

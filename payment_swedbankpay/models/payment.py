@@ -85,8 +85,8 @@ Valid view types – And valid purchaseOperation for those views:
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
 
-    swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
-    swedbankpay_key = "example_swedbank_paykey_artur_example"
+    swedbankpay_key = fields.Char('Swedbank Key', required=False)
+    #swedbankpay_key = "example_swedbank_paykey_artur_example"
 
     def swedbankpay_form_generate_values_depricated(self, values):
         _logger.warn("~ %s " % "swedbankpay_form_generate_values")

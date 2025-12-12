@@ -82,7 +82,7 @@ Valid view types – And valid purchaseOperation for those views:
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
 
-    swedbankpay_key = fields.Char('Swedbank Key', required_if_provider='swedbankpay')
+    swedbankpay_key = fields.Char('Swedbank Key', required=False)
 
     def _swedbankpay_get_api_url(self):
         """ Return the API URL according to the provider state.
@@ -95,15 +95,14 @@ Valid view types – And valid purchaseOperation for those views:
         self.ensure_one()
 
         if self.state == 'enabled':
-            return 'https://api.externalintegration.payex.com'
+            return 'https://api.payex.com'
         else:
             return 'https://api.externalintegration.payex.com'
+            
 
     def _swedbankpay_make_request(self, endpoint, payload=None, method='POST'):
         """ Make a request to Swedbankpay API at the specified endpoint.
-
         Note: self.ensure_one()
-
         :param str endpoint: The endpoint to be reached by the request.
         :param dict payload: The payload of the request.
         :param str method: The HTTP method of the request.
@@ -112,29 +111,51 @@ Valid view types – And valid purchaseOperation for those views:
         :raise ValidationError: If an HTTP error occurs.
         """
         self.ensure_one()
-
         url = url_join(self._swedbankpay_get_api_url(), endpoint)
-        headers = {'Authorization': f'Bearer {self.swedbankpay_key}', 'Content-Type': 'application/json;version=3.1'}
+        #headers = {'Authorization': f'Bearer {self.swedbankpay_key}', 'Content-Type': 'application/json;version=3.1'}
+        #swedbankpay_account_nr
+        headers = {'Authorization': f'Bearer {self.swedbankpay_account_nr}', 'Content-Type': 'application/json;version=3.1'}
         try:
             if method == 'GET':
-                response = requests.get(url, data=payload, headers=headers, timeout=10)
+                response = requests.get(url, params=payload, headers=headers, timeout=10)
             else:
                 response = requests.post(url, data=payload, headers=headers, timeout=10)
-                _logger.warning(f"response: {response.text}")
+            
+            _logger.info("Response status: %s, content: %s", response.status_code, response.text)
+            
             try:
                 response.raise_for_status()
             except requests.exceptions.HTTPError:
                 _logger.exception(
-                    "Invalid API request at %s with data:\n%s", url, pprint.pformat(payload),
+                    "Invalid API request at %s with data:\n%s\nResponse: %s", 
+                    url, pprint.pformat(payload), response.text
                 )
+                _logger.warning(f"{headers=}")
+                _logger.warning(f"{url=}")
+                # Try to get error details from response
+                error_message = "Unknown error"
+                try:
+                    error_data = response.json()
+                    if 'detail' in error_data:
+                        error_message = error_data['detail']
+                    elif 'title' in error_data:
+                        error_message = error_data['title']
+                    elif 'message' in error_data:
+                        error_message = error_data['message']
+                    else:
+                        error_message = str(error_data)
+                except (ValueError, KeyError):
+                    error_message = response.text or f"HTTP {response.status_code} error"
+                
                 raise ValidationError("Swedbankpay: " + _(
-                    "The communication with the API failed. Swedbankpay gave us the following "
-                    "information: '%s'", response.json().get('message', '')
+                    "The communication with the API failed. Error: %s", error_message
                 ))
+                
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             _logger.exception("Unable to reach endpoint at %s", url)
             raise ValidationError(
                 "Swedbankpay: " + _("Could not establish the connection to the API.")
             )
+        
         return response.json()
 

@@ -51,6 +51,7 @@ class SwedbankpayController(http.Controller):
         :return: An empty string to acknowledge the notification.
         :rtype: str
         """
+
         _logger.info(
             "Handling redirection from swedbankpay for completion of transaction with reference %s",
             tx_ref,
@@ -61,7 +62,8 @@ class SwedbankpayController(http.Controller):
         )
         if not payment_utils.check_access_token(return_access_tkn, tx_ref):
             raise Forbidden()
-        # not every payment should be captured. a quick fix will be:
+
+        # not every payment should be captured.
         try:
             tx_sudo._handle_notification_data('swedbankpay', tx_sudo._swedbankpay_post_purchase_capture())
         except Exception as e:
