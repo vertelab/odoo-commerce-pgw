@@ -11,10 +11,7 @@
                         <field name="swedbankpay_merchant_id" />
                         <field name="swedbankpay_account_nr" />
                         <field name="swedbankpay_view" />
-                        <!--<field name="swedbankpay_key" />
-                        
-                             <a colspan="2" href="https://www.odoo.com/documentation/user/online/ecommerce/shopper_experience/paypal.html" target="_blank">How to configure your paypal account?</a>
-                        -->
+<!--                        <field name="swedbankpay_key"/>-->
                     </group>
                 </group>
             </field>

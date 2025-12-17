@@ -48,7 +48,10 @@ class TxSwedbankPay(models.Model):
             lambda operation: operation.get('rel') == 'redirect-checkout', payment_order.get('operations')
         ))[0]
 
-        self.provider_reference = payment_order.get('paymentOrder', {}).get('id', '').split('/')[-1]
+        self.provider_reference = payment_order.get(
+            'paymentOrder', {}).get(
+            'id', ''
+        ).split('/')[-1]
 
         rendering_values = {
             'api_url': payment_link_data.get('href'),
@@ -94,7 +97,6 @@ class TxSwedbankPay(models.Model):
                 "amount": int(self.amount * 100),
                 "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
                 "description": f"Odoo Payment ({self.reference})",
-                #"userAgent": "Mozilla/5.0...",
                 "userAgent": request.httprequest.headers.get('User-Agent', 'Mozilla/5.0'),
                 "language": "sv-SE",
                 "urls": {
@@ -102,7 +104,6 @@ class TxSwedbankPay(models.Model):
                     "completeUrl": f'{complete_url}?{urls.url_encode(url_params)}',
                     "cancelUrl": f'{cancel_url}?{urls.url_encode(url_params)}',
                     "callbackUrl": urls.url_join(base_url, SwedbankpayController._webhook_url),
-                    # "logoUrl": urls.url_join(base_url, f"web/image/res.company/{self.company_id.id}/logo") # 50px by 400px
                 },
                 "payeeInfo": {
                     "payeeId": self.provider_id.swedbankpay_merchant_id,
@@ -144,7 +145,7 @@ class TxSwedbankPay(models.Model):
 
     def _swedbankpay_post_purchase_capture(self):
         _logger.info(
-            "Sending '/psp/paymentorders/{id}/captures' request for transaction with reference %s",
+            f"Sending '/psp/paymentorders/{self.provider_reference}/captures' request for transaction with reference %s",
             self.reference
         )
 
@@ -153,9 +154,7 @@ class TxSwedbankPay(models.Model):
                 "description": f"Authorized payment capture for {self.reference}",
                 "amount": int(self.amount * 100),
                 "vatAmount": int(self.sale_order_ids[0].amount_tax * 100),
-                # "payeeReference": f"{self.reference.replace('-', '')}{self.reference.replace('-', '')}",
                 "payeeReference": f"{self.sanitize_reference(self.reference)}{self.sanitize_reference(self.reference)}",
-                #"payeeReference": f"{self.reference.replace('-', '')}",
                 "receiptReference": self.reference,
                 "orderItems": [{
                     "name": line.product_id.name,
@@ -164,13 +163,11 @@ class TxSwedbankPay(models.Model):
                     "quantity": line.product_uom_qty,
                     "quantityUnit": "pcs",
                     "unitPrice": int(line.price_unit * 100),
-                    #"vatPercent": int((line.price_total/line.price_subtotal)-1 if line.price_subtotal > 0 and (line.price_total/line.price_subtotal) > 1 else 0),
                     "vatPercent": int((round(line.price_total/line.price_subtotal, 2)-1)*10000) if line.price_total and line.price_subtotal else 0,
                     "amount": int(line.price_total * 100),
                     "vatAmount": int((round(line.price_total - line.price_subtotal, 2)) * 100),
                     "reference": self.sanitize_reference(
                         line.product_id.default_code if line.product_id.default_code else line.product_id.name)
-                    # "reference": re.sub(r'[^a-zA-Z0-9]', '',line.product_id.default_code) if line.product_id.default_code else re.sub(r'[^a-zA-Z0-9]', '',line.product_id.name),
 
                 } for line in self.sale_order_ids[0].order_line]
             }
@@ -194,6 +191,13 @@ class TxSwedbankPay(models.Model):
         if self.provider_code != 'swedbankpay':
             return
 
+        if self.state in ('done', 'cancel', 'error'):
+            _logger.info(
+                "Transaction %s already in final state %s, skipping duplicate processing",
+                self.reference, self.state
+            )
+            return
+
         order_status_request = self.provider_id._swedbankpay_make_request(
             f'/psp/paymentorders/{self.provider_reference}', method='GET'
         )
@@ -212,6 +216,15 @@ class TxSwedbankPay(models.Model):
             self._set_pending()
         elif payment_status in const.PAYMENT_STATUS_MAPPING['done']:
             self._set_done()
+            try:
+                self._swedbankpay_post_purchase_capture()
+                _logger.info("Capture successful for transaction %s", self.reference)
+            except Exception as e:
+                # This is expected if already captured by another request
+                _logger.info(
+                    "Capture not needed for transaction %s: %s",
+                    self.reference, str(e)
+                )
         elif payment_status in const.PAYMENT_STATUS_MAPPING['cancel']:
             self._set_canceled()
         elif payment_status in const.PAYMENT_STATUS_MAPPING['error']:

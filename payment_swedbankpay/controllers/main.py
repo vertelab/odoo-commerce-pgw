@@ -57,18 +57,9 @@ class SwedbankpayController(http.Controller):
             tx_ref,
         )
 
-        tx_sudo = request.env['payment.transaction'].sudo()._get_tx_from_notification_data(
-            'swedbankpay', {'tx_ref': tx_ref}
-        )
         if not payment_utils.check_access_token(return_access_tkn, tx_ref):
             raise Forbidden()
 
-        # not every payment should be captured.
-        try:
-            tx_sudo._handle_notification_data('swedbankpay', tx_sudo._swedbankpay_post_purchase_capture())
-        except Exception as e:
-            _logger.warning(f"Capture is probably not necessary for this. Finalizing Payment")
-            tx_sudo._handle_notification_data('swedbankpay', {})
         return request.redirect('/payment/status')
 
     @http.route(_webhook_url, type='http', methods=['POST'], auth='public', csrf=False)

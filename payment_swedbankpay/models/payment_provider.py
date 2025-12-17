@@ -82,7 +82,7 @@ Valid view types – And valid purchaseOperation for those views:
 * PREMIUMSMS – SALE
 * SWISH – SALE""", required_if_provider='swedbankpay')
 
-    swedbankpay_key = fields.Char('Swedbank Key', required=False)
+    # swedbankpay_key = fields.Char('Swedbank Key', required=False)
 
     def _swedbankpay_get_api_url(self):
         """ Return the API URL according to the provider state.
@@ -112,7 +112,7 @@ Valid view types – And valid purchaseOperation for those views:
         """
         self.ensure_one()
         url = url_join(self._swedbankpay_get_api_url(), endpoint)
-        #headers = {'Authorization': f'Bearer {self.swedbankpay_key}', 'Content-Type': 'application/json;version=3.1'}
+        # headers = {'Authorization': f'Bearer {self.swedbankpay_key}', 'Content-Type': 'application/json;version=3.1'}
         #swedbankpay_account_nr
         headers = {'Authorization': f'Bearer {self.swedbankpay_account_nr}', 'Content-Type': 'application/json;version=3.1'}
         try:
